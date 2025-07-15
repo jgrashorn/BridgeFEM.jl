@@ -233,6 +233,7 @@ struct SimulationOptions
     total_dofs::Int
     total_elements::Int
     support_dof_mapping::Vector{Vector{Int}} # Maps support DOFs to global DOFs
+    bc_dofs::Vector{Int} # All constrained DOFs in the system
     created_at::String
 end
 
@@ -240,18 +241,19 @@ end
 function SimulationOptions(bridge::BridgeOptions, supports::Vector{SupportElement}, temperatures::Vector{Float64}; damping_ratio=0.02)
     # Compute system properties
     support_dof_mapping, total_dofs = create_support_dof_mapping(bridge, supports)
-    total_elements = bridge.n_elem + sum(s.n_elem for s in supports)
+    total_elements = bridge.n_elem + (isempty(supports) ? 0 : sum(s.n_elem for s in supports))
+    bc_dofs = get_bc_dofs(bridge, supports, support_dof_mapping)
     
     return SimulationOptions(
-        bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, support_dof_mapping, string(now())
+        bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, support_dof_mapping, bc_dofs, string(now())
     )
 end
 
-function SimulationOptions(bridge::BridgeOptions, supports::Vector{SupportElement}, temperatures::Vector{Float64}, damping_ratio::Float64, total_dofs::Int, total_elements::Int, created_at::String)
+# function SimulationOptions(bridge::BridgeOptions, supports::Vector{SupportElement}, temperatures::Vector{Float64}, damping_ratio::Float64, total_dofs::Int, total_elements::Int, created_at::String)
 
-    return SimulationOptions(bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, support_dof_mapping, created_at)
+#     return SimulationOptions(bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, support_dof_mapping, created_at)
 
-end
+# end
 
 function simulation_options_to_dict(opts::SimulationOptions)
     return Dict(
@@ -309,11 +311,8 @@ function load_simulation_options(filename::String)::SimulationOptions
     return SimulationOptions(
         bridge,
         supports,
-        temperatures,
-        dict_data["damping_ratio"],
-        dict_data["total_dofs"],
-        dict_data["total_elements"],
-        dict_data["created_at"],
+        temperatures;
+        damping_ratio = dict_data["damping_ratio"]
     )
 end
 
@@ -542,18 +541,23 @@ function assemble_matrices(bo::BridgeOptions, T::Float64=20.0)
     E = bo.E(T)  # Young's modulus at temperature T
     assemble_stiffness!(K, bo, E * bo.A, E * bo.I)
 
-    apply_bc!(M, K, bo.bc_nodes.conds)
+    # apply_bc!(M, K, bo.bc_nodes.conds)
 
     return M, K
 end
 
-function apply_bc!(M, K, bc_dofs)
+function apply_bc(M::Matrix{Float64}, K::Matrix{Float64}, so::SimulationOptions)
+
+    bc_dofs = so.bc_dofs
+
     n_dofs = size(K, 1)
-    asdf = 1
+    
     for bc in bc_dofs
         node = bc[1]
-        dof_types = bc[2]  # DOF type(s)
-        dof_indices = 3 * (node - 1) .+ dof_types  # Convert to global DOF indices
+        # dof_types = bc[2]  # DOF type(s)
+        # dof_indices = 3 * (node - 1) .+ dof_types  # Convert to global DOF indices
+
+        dof_indices = node
         
         for d_ in dof_indices
             # @info "Applying boundary condition at DOF $d_"
@@ -561,10 +565,13 @@ function apply_bc!(M, K, bc_dofs)
                 K[:, d_] .= 0.0
                 K[d_, :] .= 0.0
                 K[d_, d_] = 1.0
+                M[d_, :] .= 0.0
+                M[:, d_] .= 0.0
                 M[d_, d_] = 0.0
             end
         end
     end
+    return M, K
 end
 
 function assemble_local_support(support::SupportElement, T::Float64=20.0)
@@ -591,6 +598,7 @@ function assemble_local_support(support::SupportElement, T::Float64=20.0)
 end
 
 function create_support_dof_mapping(bo::BridgeOptions, supports::Vector{SupportElement})
+    
     global_dof_offset = bo.n_dofs
     support_dof_maps = Vector{Vector{Int}}()
     
@@ -658,18 +666,32 @@ function get_dof_from_node(so::SimulationOptions,node::Int)
     end
 end
 
-function get_bc_dofs(so::SimulationOptions)
+function get_dof_from_node(bridge::BridgeOptions, supports::Vector{SupportElement}, node::Int)
+    # Get the DOF mapping for the given node
+    dof_map = node < bridge.n_dofs ? 3 * (node - 1) .+ [1, 2, 3] : begin
+        
+        # Check if node has support connections
+        for support in supports
+            if support.connection_node == node
+                dof_map = support.connection_dofs
+                return dof_map
+            end
+        end
+    end
+end
+
+function get_bc_dofs(bridge::BridgeOptions, supports::Vector{SupportElement}, support_dof_mapping::Vector{Vector{Int}})
 
     bc_dofs = Vector{Int}()
 
-    for bc_node in so.bridge.bc_nodes.conds
+    for bc_node in bridge.bc_nodes.conds
         node = bc_node[1]
-        dofs = get_dof_from_node(so, node)
-        @show push!(bc_dofs, dofs[bc_node[2]]...)
+        dofs = get_dof_from_node(bridge, supports, node)
+        push!(bc_dofs, dofs[bc_node[2]]...)
     end
 
-    for (i, support) in enumerate(so.supports)
-        @show push!(bc_dofs,so.support_dof_mapping[i][end-2:end]...)
+    for (i, support) in enumerate(supports)
+        push!(bc_dofs,support_dof_mapping[i][end-2:end]...)
     end
 
     return bc_dofs
@@ -699,55 +721,82 @@ Assemble expanded system matrices including bridge and support structures.
    - Maps to expanded global DOF numbering
    - Applies boundary conditions at support base
 """
-function assemble_matrices_with_supports(bo::BridgeOptions, supports::Vector{SupportElement}, T::Float64=20.0)
+function assemble_matrices_with_supports(so::SimulationOptions)
     # Get DOF mappings
     support_dof_maps, total_dofs = create_support_dof_mapping(bo, supports)
+    nTemps = length(so.temperatures)
     
     # Initialize expanded matrices
-    M = spzeros(total_dofs, total_dofs)
-    K = spzeros(total_dofs, total_dofs)
+    M = zeros(so.total_dofs, so.total_dofs, nTemps)
+    K = zeros(so.total_dofs, so.total_dofs, nTemps)
     
-    # Assemble main bridge (already temperature-dependent)
-    M_bridge, K_bridge = assemble_matrices(bo, T)
-    M[1:bo.n_dofs, 1:bo.n_dofs] .= M_bridge
-    K[1:bo.n_dofs, 1:bo.n_dofs] .= K_bridge
-    
-    # Assemble each support (now temperature-dependent)
-    for (i, support) in enumerate(supports)
-        # Get local support matrices at temperature T
-        K_local = assemble_local_support(support, T)  # FIXED: Pass temperature
-        M_local = create_support_mass_matrix(support, bo.ρ)  # Mass not temperature dependent
+    for (t, T) in enumerate(so.temperatures)
+        # Assemble main bridge (already temperature-dependent)
+        M_bridge, K_bridge = assemble_matrices(bo, T)
+
+        M_ = zeros(so.total_dofs, so.total_dofs)
+        K_ = zeros(so.total_dofs, so.total_dofs)
+
+        M_[1:so.bridge.n_dofs, 1:so.bridge.n_dofs] .= M_bridge
+        K_[1:so.bridge.n_dofs, 1:so.bridge.n_dofs] .= K_bridge
         
-        # Rotate BOTH matrices to global coordinates
-        n_support_nodes = support.n_elem + 1
-        T_expanded = create_expanded_transformation(support.angle, n_support_nodes)
-        
-        K_rotated = T_expanded' * K_local * T_expanded
-        M_rotated = T_expanded' * M_local * T_expanded
-        
-        # Map to global DOFs
-        dof_map = support_dof_maps[i]
-        K[dof_map, dof_map] .+= K_rotated
-        M[dof_map, dof_map] .+= M_rotated
-        
-        # Apply boundary conditions to LAST node (fixed base)
-        n_support_nodes = support.n_elem + 1
-        fixed_node_local_dofs = 3*(n_support_nodes-1) .+ [1, 2, 3]  # Last node
-        fixed_node_global_dofs = dof_map[fixed_node_local_dofs]
-        
-        # Apply boundary conditions
-        for dof_type in support.bc_bottom
-            global_dof = fixed_node_global_dofs[dof_type]
-            K[:, global_dof] .= 0.0
-            K[global_dof, :] .= 0.0
-            K[global_dof, global_dof] = 1.0
-            M[:, global_dof] .= 0.0
-            M[global_dof, :] .= 0.0
-            M[global_dof, global_dof] = 0.0
+        # Assemble each support (now temperature-dependent)
+        for (i, support) in enumerate(so.supports)
+            # Get local support matrices at temperature T
+            K_local = assemble_local_support(support, T)  # FIXED: Pass temperature
+            M_local = create_support_mass_matrix(support, bo.ρ)  # Mass not temperature dependent
+            
+            # Rotate BOTH matrices to global coordinates
+            n_support_nodes = support.n_elem + 1
+            T_expanded = create_expanded_transformation(support.angle, n_support_nodes)
+            
+            K_rotated = T_expanded' * K_local * T_expanded
+            M_rotated = T_expanded' * M_local * T_expanded
+            
+            # Map to global DOFs
+            dof_map = so.support_dof_mapping[i]
+            K_[dof_map, dof_map] .+= K_rotated
+            M_[dof_map, dof_map] .+= M_rotated
+            
+            # Apply boundary conditions to LAST node (fixed base)
+            # n_support_nodes = support.n_elem + 1
+            # fixed_node_local_dofs = 3*(n_support_nodes-1) .+ [1, 2, 3]  # Last node
+            # fixed_node_global_dofs = dof_map[fixed_node_local_dofs]
+            
+            # # Apply boundary conditions
+            # for dof_type in support.bc_bottom
+            #     global_dof = fixed_node_global_dofs[dof_type]
+            #     K[:, global_dof] .= 0.0
+            #     K[global_dof, :] .= 0.0
+            #     K[global_dof, global_dof] = 1.0
+            #     M[:, global_dof] .= 0.0
+            #     M[global_dof, :] .= 0.0
+            #     M[global_dof, global_dof] = 0.0
+            # end
         end
+        # M[:,:,t], K[:,:,t] = apply_bc(M_, K_, so)
+        M[:,:,t] = M_
+        K[:,:,t] = K_
     end
-    
+
     return M, K
+
+end
+
+function remove_fixed_dofs(M, K, bc_dofs::Vector{Int}, total_dofs::Int)
+    # Remove fixed DOFs from mass and stiffness matrices
+    retained_dofs = setdiff(1:total_dofs, bc_dofs)
+    removed_dofs = bc_dofs
+    
+    if ndims(M) == 2
+        # 2D case (single temperature)
+        M_ = M[retained_dofs, retained_dofs]
+        K_ = K[retained_dofs, retained_dofs]
+        return M_, K_, retained_dofs, removed_dofs
+    end
+    M_ = M[retained_dofs, retained_dofs, :]
+    K_ = K[retained_dofs, retained_dofs, :]
+    return M_, K_, retained_dofs, removed_dofs
 end
 
 function create_expanded_transformation(angle::Float64, n_nodes::Int)

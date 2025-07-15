@@ -61,26 +61,42 @@ end
 
 function beam_physical_ode!(du, u, p, t)
     # Unpack state vector
-    # u_ = u[1:p.n_dofs]        # modal displacements
-    # udot_ = u[p.n_dofs+1:end] # modal velocities
+    du .= 0.0  # Reset derivative vector
+    u_ = u[1:p.n_dofs]        # modal displacements
+    udot_ = u[p.n_dofs+1:end] # modal velocities
 
     # Interpolate natural frequencies and mode shapes
     M = p.M_interp(p.T_func(t))
-    ζ = p.ζ
     K = p.K_interp(p.T_func(t))
 
+    M_ff, K_ff, retained, removed = remove_fixed_dofs(M, K, p.bc_dofs, p.n_dofs)
+
+    M_fc = M[retained, removed]
+    K_fc = K[retained, removed]
+
+    f_add_fc = K_fc * u_[removed]
+
+    u_dofs = [retained; p.n_dofs .+ retained]
+    n_retained = length(retained)
+
     # Assemble global load vector
-    @show f = p.load_vector(t, 1:p.n_dofs)
+    f = p.load_vector(t, 1:p.n_dofs)
+    f = f[retained]
+    f .+= f_add_fc
 
     # Construct system matrix blocks
-    Z = zeros(p.n_dofs, p.n_dofs)
-    I = Matrix{Float64}(LinearAlgebra.I, p.n_dofs, p.n_dofs)
-    Minv = pinv(M)
-    D = 2 .* ζ .* sqrt.(diag(K) ./ diag(M)) # Rayleigh-like modal damping (if needed, adjust as appropriate)
-    Dmat = Diagonal(D)
-    @show A = [Z I; -Minv*K -Minv*Dmat]
+    Z = zeros(n_retained, n_retained)
+    I = Matrix{Float64}(LinearAlgebra.I, n_retained, n_retained)
 
-    b = [zeros(p.n_dofs); Minv*f]
-    du = A * u + b
+    Minv = pinv(M_ff)
+    # Rayleigh-like modal damping (if needed, adjust as appropriate)
+    D = p.α .* M_ff + p.β .* K_ff
+
+    A = [Z I; -Minv*K_ff -Minv*D]
+
+    b = [zeros(n_retained); Minv*f]
+    du_ff = A * u[u_dofs] + b
+
+    du[u_dofs] .= du_ff
 
 end

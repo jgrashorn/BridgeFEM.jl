@@ -86,12 +86,14 @@ function decompose_matrices(M, K)
     return ω_matrix, Φ_tensor, Φ_tensor_unnormalized  # Return both normalized and unnormalized mode shapes
 end
 
-function assemble_and_decompose(bo::BridgeOptions, Ts::Vector{Float64}; supports::Vector{SupportElement} = SupportElement[])
-    nTs = length(Ts)
+function assemble_and_decompose(so::SimulationOptions)
+
+    nTs = length(so.temperatures)
     @info "Assembling matrices with supports for $nTs temperatures"
-    mats = [assemble_matrices_with_supports(bo, supports, T) for T in Ts]
-    M = cat([mats[i][1] for i in 1:nTs]..., dims=3)
-    K = cat([mats[i][2] for i in 1:nTs]..., dims=3)
+    
+    M, K = assemble_matrices_with_supports(so)
+    # M_, K_, _ = remove_fixed_dofs(M, K, so.bc_dofs, so.total_dofs)
+    @show matrices = [apply_bc(M[:,:,i], K[:,:,i], so) for i in axes(M, 3)]
 
     @info "Decomposing matrices"
     λs, vectors, vectors_unnormalized = decompose_matrices(M, K)
