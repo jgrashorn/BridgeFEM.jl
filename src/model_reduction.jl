@@ -92,11 +92,17 @@ function assemble_and_decompose(so::SimulationOptions)
     @info "Assembling matrices with supports for $nTs temperatures"
     
     M, K = assemble_matrices_with_supports(so)
+    M_ = zeros(size(M))
+    K_ = zeros(size(K))
     # M_, K_, _ = remove_fixed_dofs(M, K, so.bc_dofs, so.total_dofs)
-    @show matrices = [apply_bc(M[:,:,i], K[:,:,i], so) for i in axes(M, 3)]
+    # matrices = [apply_bc(M[:,:,i], K[:,:,i], so) for i in axes(M, 3)]
+
+    for i=axes(M, 3)
+        M_[:,:,i], K_[:,:,i] = apply_bc(M[:,:,i], K[:,:,i], so)
+    end
 
     @info "Decomposing matrices"
-    λs, vectors, vectors_unnormalized = decompose_matrices(M, K)
+    λs, vectors, vectors_unnormalized = decompose_matrices(M_, K_)
 
     keep_modes = λs[:,1] .< bo.cutoff_freq
     λs = λs[keep_modes, :]

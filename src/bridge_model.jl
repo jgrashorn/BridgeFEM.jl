@@ -691,7 +691,9 @@ function get_bc_dofs(bridge::BridgeOptions, supports::Vector{SupportElement}, su
     end
 
     for (i, support) in enumerate(supports)
-        push!(bc_dofs,support_dof_mapping[i][end-2:end]...)
+        end_dofs = support_dof_mapping[i][end-2:end]
+        fixed_dofs = end_dofs[support.bc_bottom]
+        push!(bc_dofs,fixed_dofs...)
     end
 
     return bc_dofs

@@ -20,7 +20,7 @@ cutoff_freq = 50.0  # Cutoff frequency for modes (Hz)
 
 bc = BridgeBC([  # Node 1: both translational and rotational DOFs fixed
     [1, "trans"],
-    [n_node, "trans"]
+    [n_node, "y"]
 ])
 
 bo = BridgeOptions(n_elem, bc, L, ρ, A, I, [-100 206e9; 70 150e9], cutoff_freq)
@@ -38,30 +38,18 @@ A_support = 0.01        # Cross-section area (m^2)
 I_support = 0.001       # Moment of inertia (m^4)
 L_support = 50.0       # Length of support element (m)
 
-# se = [SupportElement(
-#         n_elem ÷ 3,          
-#         [1, 2, 3],               # Connect x,y,ϕ DOFs
-#         -150.0,                   # angle (degrees)
-#         5,                       # 5 elements in support
-#         A_support,               # Cross-sectional area
-#         I_support,               # Moment of inertia
-#         E_support,          # Temperature-dependent Young's modulus
-#         L_support,               # Length
-#         BCTypes["trans"]           # Fix all DOFs at bottom
-#     ),
-#     SupportElement(
-#         n_elem - (n_elem ÷ 3),   
-#         [1, 2, 3],               # Connect x,y,ϕ DOFs
-#         -30.0,                   # angle (degrees)
-#         5,                       # 5 elements in support
-#         A_support,               # Cross-sectional area
-#         I_support,               # Moment of inertia
-#         E_support,          # Temperature-dependent Young's modulus
-#         L_support,               # Length
-#         BCTypes["trans"]           # Fix all DOFs at bottom
-#     )]
-
 se = [SupportElement(
+        n_elem ÷ 3,          
+        [1, 2, 3],               # Connect x,y,ϕ DOFs
+        -150.0,                   # angle (degrees)
+        5,                       # 5 elements in support
+        A_support,               # Cross-sectional area
+        I_support,               # Moment of inertia
+        E_support,          # Temperature-dependent Young's modulus
+        L_support,               # Length
+        BCTypes["trans"]           # Fix all DOFs at bottom
+    ),
+    SupportElement(
         n_elem - (n_elem ÷ 3),   
         [1, 2, 3],               # Connect x,y,ϕ DOFs
         -30.0,                   # angle (degrees)
@@ -69,9 +57,10 @@ se = [SupportElement(
         A_support,               # Cross-sectional area
         I_support,               # Moment of inertia
         E_support,          # Temperature-dependent Young's modulus
-        20.0,               # Length
+        L_support,               # Length
         BCTypes["trans"]           # Fix all DOFs at bottom
     )]
+
 # Example workflow with supports:
 supports = se  # Your support element
 # supports = SupportElement[]
@@ -85,23 +74,24 @@ sim_opts = SimulationOptions(
 save_simulation_options(sim_opts, "data/bridge_simulation_config.json")
 
 M, K = assemble_matrices_with_supports(sim_opts)
+M_, K_ = apply_bc(M[:,:,2],K[:,:,2],sim_opts)
 
-# M, K, λs, vectors, vectors_unnormalized = assemble_and_decompose(sim_opts)
+M, K, λs, vectors, vectors_unnormalized = assemble_and_decompose(sim_opts)
 
 # Solve dynamics (same ODE, but with expanded system)
-# n_modes = size(λs, 1)
+n_modes = size(λs, 1)
 total_dofs = sim_opts.total_dofs
 # @info "Number of modes: $n_modes"
 
 # Create interpolators (same as before)
-# ω_interp = interpolate((1:size(λs,1), Ts), λs, Gridded(Linear()))
-# Φ_interp = interpolate((1:size(vectors,1), 1:size(vectors,2), Ts), vectors, Gridded(Linear()))
+ω_interp = interpolate((1:size(λs,1), Ts), λs, Gridded(Linear()))
+Φ_interp = interpolate((1:size(vectors,1), 1:size(vectors,2), Ts), vectors, Gridded(Linear()))
 
 M_interp = interpolate((1:size(M,1), 1:size(M,2), Ts), M, Gridded(Linear()))
 K_interp = interpolate((1:size(K,1), 1:size(K,2), Ts), K, Gridded(Linear()))
 
-# ω_T = t -> ω_interp(1:n_modes, t)
-# Φ_T = t -> Φ_interp(1:total_dofs, 1:n_modes, t)
+ω_T = t -> ω_interp(1:n_modes, t)
+Φ_T = t -> Φ_interp(1:total_dofs, 1:n_modes, t)
 
 M_T = t -> M_interp(1:total_dofs, 1:total_dofs, t)
 K_T = t -> K_interp(1:total_dofs, 1:total_dofs, t)
@@ -109,13 +99,14 @@ K_T = t -> K_interp(1:total_dofs, 1:total_dofs, t)
 # force_node = collect(2+3*bo.n_elem ÷ 2)  # Node to apply force on (y-displacement)
 force_node = (3*(n_node ÷ 2)) + 2
 
-tspan = (0.0, 10.0)
+tspan = (0.0, 30.0)
 
 # Your load_vector function needs to account for expanded DOF numbering
 load_vector = (t, dof) -> begin 
     f = zeros(Float64, length(dof))
-    f[force_node] = 1000.0 * sin(2π * 20.0 * t)  # Example sinusoidal force
-    if t>5.0
+    # f[force_node] = 1000.0 * sin(2π * 1.0 * t)  # Example sinusoidal force
+    return f
+    if t>10.0
         f[force_node] = 0.0  # Stop force after 5 seconds
     end
     return f
@@ -140,24 +131,37 @@ end
 #     return f
 # end
 
-α, β = 0.01, 0.01
+# α, β = 0.001, 0.001
+α, β = 0.0001, 0.001  # No Rayleigh damping for now
 
-# u0_modal = zeros(n_modes * 2) 
+C = α * M_[:,:,1] + β * K_[:,:,1]  # Rayleigh damping matrix
+C_modal = Φ_T(20.0)' * C * Φ_T(20.0)  # Project to modal space
+ζ = diag(C_modal)
+
+Φ = Φ_T(20.0)  # Mode shapes at T=20°C
+
 u0_physical = zeros(total_dofs * 2)
+u0_physical[force_node] = 0.00003
+
+u0_modal_ = Φ_T(20.0)' * M[:,:,2] * u0_physical[1:total_dofs]
+du0_modal_ = Φ_T(20.0)' * u0_physical[total_dofs+1:end]
+u0_modal = [u0_modal_; du0_modal_]
+
+# u0_modal = [Φ_T(20.0)' zeros(n_modes, total_dofs); zeros(n_modes, total_dofs) Φ_T(20.0)'] * u0_physical  # Initial conditions in modal space
 
 # T_func = (t) -> Ts[end] - (Ts[end] - Ts[1]) * (t / tspan[2])  # Linear temperature change from Ts[1] to Ts[end]
 T_func = (t) -> 20.0
 
-# prob_modal = ODEProblem(beam_modal_ode!, u0_modal, tspan,
-#                     (; 
-#                         n_modes=n_modes,
-#                         n_dofs=total_dofs,
-#                         T_func = T_func,
-#                         ω_interp = ω_T,
-#                         ζ = fill(damping_ratio, n_modes),  # Constant damping
-#                         Φ_interp = Φ_T,
-#                         load_vector = load_vector,
-#                     ))
+prob_modal = ODEProblem(beam_modal_ode!, u0_modal, tspan,
+                    (; 
+                        n_modes=n_modes,
+                        n_dofs=total_dofs,
+                        T_func = T_func,
+                        ω_interp = ω_T,
+                        ζ = ζ,  # Constant damping
+                        Φ_interp = Φ_T,
+                        load_vector = load_vector,
+                    ))
 
 prob_physical = ODEProblem(beam_physical_ode!, u0_physical, tspan,
                     (; 
@@ -172,16 +176,19 @@ prob_physical = ODEProblem(beam_physical_ode!, u0_physical, tspan,
                         load_vector = load_vector,
                     ))
 
-# @info "Solving dynamic response with $(n_modes) modes in modal space..."
-# @time sol_modal = solve(prob_modal, saveat=0.01);
-# q = reduce(hcat, sol_modal.u)
-# u_modal, du_modal = reconstruct_physical(sim_opts, q, Φ_T, T_func, sol_modal.t)
+@info "Solving dynamic response with $(n_modes) modes in modal space..."
+@time sol_modal = solve(prob_modal, saveat=0.01);
+q = reduce(hcat, sol_modal.u)
+u_modal, du_modal = reconstruct_physical(sim_opts, q, Φ_T, T_func, sol_modal.t)
 
 @info "Solving dynamic response with $(total_dofs) DOFs in physical space..."
 @time sol_physical = solve(prob_physical, saveat=0.01);
 u_ = reduce(hcat, sol_physical.u)
 u_physical = u_[1:total_dofs, :]
 du_physical = u_[total_dofs+1:end, :]
+
+plot(u_physical[5:12:end,:]',linestyle=:dash,label="physical")
+plot!(u_modal[5:12:end,:]',label="modal")
 
 # # 1. Plot structure only
 # plot_bridge_with_supports(bo, supports)
