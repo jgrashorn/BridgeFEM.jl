@@ -249,6 +249,18 @@ function SimulationOptions(bridge::BridgeOptions, supports::Vector{SupportElemen
     )
 end
 
+function SimulationOptions(bridge::BridgeOptions, temperatures::Vector{Float64}; damping_ratio=0.02)
+    # Compute system properties
+    supports = SupportElement[]  # No supports by default
+    support_dof_mapping, total_dofs = create_support_dof_mapping(bridge, supports)
+    total_elements = bridge.n_elem + (isempty(supports) ? 0 : sum(s.n_elem for s in supports))
+    bc_dofs = get_bc_dofs(bridge, supports, support_dof_mapping)
+    
+    return SimulationOptions(
+        bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, support_dof_mapping, bc_dofs, string(now())
+    )
+end
+
 # function SimulationOptions(bridge::BridgeOptions, supports::Vector{SupportElement}, temperatures::Vector{Float64}, damping_ratio::Float64, total_dofs::Int, total_elements::Int, created_at::String)
 
 #     return SimulationOptions(bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, support_dof_mapping, created_at)
@@ -574,6 +586,17 @@ function apply_bc(M::Matrix{Float64}, K::Matrix{Float64}, so::SimulationOptions)
     return M, K
 end
 
+function apply_bc(M::Array{Float64,3}, K::Array{Float64,3}, so::SimulationOptions)
+
+    M_, K_ = zeros(size(M)), zeros(size(K))
+
+    for i in axes(M,3)
+        M_[:,:,i], K_[:,:,i] = apply_bc(M[:,:,i], K[:,:,i], so)
+    end
+
+    return M_, K_
+end
+
 function assemble_local_support(support::SupportElement, T::Float64=20.0)
     n_nodes = support.n_elem + 1
     n_dofs = 3 * n_nodes
@@ -725,7 +748,7 @@ Assemble expanded system matrices including bridge and support structures.
 """
 function assemble_matrices_with_supports(so::SimulationOptions)
     # Get DOF mappings
-    support_dof_maps, total_dofs = create_support_dof_mapping(bo, supports)
+    support_dof_maps, total_dofs = create_support_dof_mapping(bo, so.supports)
     nTemps = length(so.temperatures)
     
     # Initialize expanded matrices
@@ -760,23 +783,7 @@ function assemble_matrices_with_supports(so::SimulationOptions)
             K_[dof_map, dof_map] .+= K_rotated
             M_[dof_map, dof_map] .+= M_rotated
             
-            # Apply boundary conditions to LAST node (fixed base)
-            # n_support_nodes = support.n_elem + 1
-            # fixed_node_local_dofs = 3*(n_support_nodes-1) .+ [1, 2, 3]  # Last node
-            # fixed_node_global_dofs = dof_map[fixed_node_local_dofs]
-            
-            # # Apply boundary conditions
-            # for dof_type in support.bc_bottom
-            #     global_dof = fixed_node_global_dofs[dof_type]
-            #     K[:, global_dof] .= 0.0
-            #     K[global_dof, :] .= 0.0
-            #     K[global_dof, global_dof] = 1.0
-            #     M[:, global_dof] .= 0.0
-            #     M[global_dof, :] .= 0.0
-            #     M[global_dof, global_dof] = 0.0
-            # end
         end
-        # M[:,:,t], K[:,:,t] = apply_bc(M_, K_, so)
         M[:,:,t] = M_
         K[:,:,t] = K_
     end
@@ -837,4 +844,28 @@ function create_support_mass_matrix(support::SupportElement, ρ::Float64)
     end
     
     return M_local
+end
+
+function interpolate_matrix(M::Array{Float64,3}, Ts::Vector{Float64})
+    M_interp = interpolate((1:size(M,1), 1:size(M,2), Ts), M, Gridded(Linear()))
+    M_T = t -> M_interp(1:size(M,1), 1:size(M,2), t)
+    return M_T
+end
+
+function setup_interpolation(M::Array{Float64,3}, K::Array{Float64,3}, Ts::Vector{Float64})
+    # Create interpolation function for each temperature slice
+    M_T = interpolate_matrix(M, Ts)
+    K_T = interpolate_matrix(K, Ts)
+
+    # Return a function that evaluates the matrices at a given temperature
+    return M_T, K_T
+end
+
+function setup_physical(so::SimulationOptions)
+
+    M, K = assemble_matrices_with_supports(so)
+    M_T, K_T = setup_interpolation(M, K, so.temperatures)
+
+    return M_T, K_T
+
 end

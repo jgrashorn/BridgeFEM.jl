@@ -97,20 +97,56 @@ function assemble_and_decompose(so::SimulationOptions)
     # M_, K_, _ = remove_fixed_dofs(M, K, so.bc_dofs, so.total_dofs)
     # matrices = [apply_bc(M[:,:,i], K[:,:,i], so) for i in axes(M, 3)]
 
-    for i=axes(M, 3)
-        M_[:,:,i], K_[:,:,i] = apply_bc(M[:,:,i], K[:,:,i], so)
-    end
+    M_, K_ = apply_bc(M, K, so)
 
     @info "Decomposing matrices"
     λs, vectors, vectors_unnormalized = decompose_matrices(M_, K_)
 
+    @info "Found $(size(λs, 1)) modes across $nTs temperatures"
+
     keep_modes = λs[:,1] .< bo.cutoff_freq
     λs = λs[keep_modes, :]
+
+    @info "Keeping $(sum(keep_modes)) modes below cutoff frequency $(bo.cutoff_freq) Hz"
+
     vectors = vectors[:, keep_modes, :]
     vectors_unnormalized = vectors_unnormalized[:, keep_modes, :]
 
     return M, K, λs, vectors, vectors_unnormalized
 end
+
+function setup_interpolation(λs::Matrix{Float64}, vectors::Array{Float64,3}, Ts::Vector{Float64})
+
+    λ_T = interpolate_modes(λs, Ts)
+    Φ_T = interpolate_modes(vectors, Ts)
+
+    return λ_T, Φ_T
+end
+
+function interpolate_modes(vec::Matrix{Float64}, Ts)
+    n_modes = size(vec, 1)
+
+    λ_interp = interpolate((1:n_modes, Ts), vec, Gridded(Linear()))
+    λ_T = t -> λ_interp(1:n_modes, t)
+
+    return λ_T
+end
+
+function interpolate_modes(mat::Array{Float64,3}, Ts)
+    n_modes = size(mat, 2)
+    total_dofs = size(mat, 1)
+
+    Φ_interp = interpolate((1:total_dofs, 1:n_modes, Ts), mat, Gridded(Linear()))
+    Φ_T = t -> Φ_interp(1:total_dofs, 1:n_modes, t)
+
+    return Φ_T
+end
+
+"""
+    reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
+
+"""
+    reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
 
 function reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
     
@@ -137,4 +173,15 @@ function reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, 
     end
 
     return u_full, du_full
+end
+
+function setup_ROM(so::SimulationOptions)
+
+    M, K, λs, vectors, vectors_unnormalized = assemble_and_decompose(so)
+
+    n_modes = size(λs, 1)
+    λ_T, Φ_T = setup_interpolation(λs, vectors, so.temperatures)
+
+    return λ_T, Φ_T, n_modes
+
 end

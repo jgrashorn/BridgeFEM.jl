@@ -75,7 +75,7 @@ function plot_bridge_with_supports(bo::BridgeOptions, supports::Vector{SupportEl
     
     # Plot bridge
     p = plot(bridge_x, bridge_y, linewidth=3, color=:blue, label="Bridge", 
-             aspect_ratio=:equal, grid=true)
+             grid=true)
     
     if show_nodes
         scatter!(bridge_x, bridge_y, color=:blue, markersize=4, label="Bridge Nodes")
@@ -204,7 +204,7 @@ function animate_mode(bo::BridgeOptions, supports::Vector{SupportElement},
         plot!(p, 
             xlims=x_limits, 
             ylims=y_limits,
-            aspect_ratio=1,        # Reduce this value to make plot wider
+            # aspect_ratio=1,        # Reduce this value to make plot wider
             size=fsize,        # Increase figure width
             legend=:topright,        
             legend_background_color=:white)
@@ -230,7 +230,7 @@ function animate_dynamic_response(bo::BridgeOptions, supports::Vector{SupportEle
     max_y_disp = maximum(abs.(u[2:3:min(bo.n_dofs, size(u,1)), :]), init=0.0)
     max_deformation = max(max_x_disp, max_y_disp) * scale_factor
     
-    padding = 20.0
+    padding = 0.0
     x_limits = (-padding - support_extent - max_deformation, 
                 bridge_extent + padding + support_extent + max_deformation)
     y_limits = (-padding - support_extent - max_deformation, 
@@ -262,14 +262,10 @@ function animate_dynamic_response(bo::BridgeOptions, supports::Vector{SupportEle
         plot!(p, 
               xlims=x_limits, 
               ylims=y_limits,
-              aspect_ratio=2.0,
+            #   aspect_ratio=2.0,
               size=(1200, 400),
               legend=:topright,
-              legend_background_color=:white,
-              left_margin=3Plots.mm,
-              right_margin=10Plots.mm,
-              top_margin=3Plots.mm,
-              bottom_margin=5Plots.mm)
+              legend_background_color=:white)
         
         frame(anim)
         

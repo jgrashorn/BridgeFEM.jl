@@ -2,21 +2,21 @@ using LinearAlgebra, DifferentialEquations, Plots
 using Interpolations
 using JSON
 
-include("src/bridge_model.jl")
-include("src/model_reduction.jl")
-include("src/utils.jl")
-include("src/dynamic_simulation.jl")
+include("../src/bridge_model.jl")
+include("../src/model_reduction.jl")
+include("../src/utils.jl")
+include("../src/dynamic_simulation.jl")
 
 # Beam and material parameters
 L = 10.0               # Beam length (m)
 n_elem = 12           # Number of finite elements
 n_node = n_elem + 1   # Number of nodes
 ρ = 7800.0            # Density (kg/m^3)
-A = 1.0              # Cross-section area (m^2)
-I = 1.0              # Moment of inertia (m^4)
+A = .1              # Cross-section area (m^2)
+I = .001              # Moment of inertia (m^4)
 E0 = 207e9             # Base Young's modulus (Pa)
 α = -1e5              # E-temperature slope (Pa/K)
-cutoff_freq = 50.0  # Cutoff frequency for modes (Hz)
+cutoff_freq = 500.0  # Cutoff frequency for modes (Hz)
 
 bc = BridgeBC([  # Node 1: both translational and rotational DOFs fixed
     [1, "trans"],
@@ -32,20 +32,21 @@ E_bridge = [
 
 supports = SupportElement[]
 
-Ts = [20.0]
+Ts = [10.0, 20.0]
 
 # Create comprehensive simulation options
 sim_opts = SimulationOptions(
     bo, supports, collect(Ts), damping_ratio=0.02
 )
 
-M, K = assemble_matrices_with_supports(sim_opts)
+# M, K = assemble_matrices_with_supports(sim_opts)
+M_T, K_T = setup_physical(sim_opts)
 
 f0 = -10000.0
 f = zeros(n_node*3)
-f[end ÷ 2+1] = f0
+f[(n_node ÷ 2)*3 + 2] = f0
 
-M_, K_ = apply_bc(M[:,:,1], K[:,:,1], sim_opts)
+M_, K_ = apply_bc(M_T(20.0), K_T(20.0), sim_opts)
 
 u = K_ \ f
 
@@ -59,6 +60,8 @@ for (i,x_) in enumerate(x)
         u_analytical[i] = f0 .* (L-x_) ./ (48 .*E0.*I) .* (3 .*L.^2 .- 4.0 .* (L-x_).^2)
     end
 end
+
+
 
 plot(x, u[2:3:end], label="y")
 plot!(x, u_analytical, label="y analytical", linestyle=:dash, xlabel="x (m)", ylabel="y (m)")
