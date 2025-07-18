@@ -104,10 +104,10 @@ function assemble_and_decompose(so::SimulationOptions)
 
     @info "Found $(size(λs, 1)) modes across $nTs temperatures"
 
-    keep_modes = λs[:,1] .< bo.cutoff_freq
+    keep_modes = λs[:,1] .< so.bridge.cutoff_freq
     λs = λs[keep_modes, :]
 
-    @info "Keeping $(sum(keep_modes)) modes below cutoff frequency $(bo.cutoff_freq) Hz"
+    @info "Keeping $(sum(keep_modes)) modes below cutoff frequency $(so.bridge.cutoff_freq) Hz"
 
     vectors = vectors[:, keep_modes, :]
     vectors_unnormalized = vectors_unnormalized[:, keep_modes, :]
@@ -146,20 +146,14 @@ end
     reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
 
 """
-    reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
-
 function reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
-    
-    bo = so.bridge
-    # Auto-detect total DOFs from the interpolator dimensions
-    total_dofs = so.total_dofs
     
     n_modes_total = size(q_full, 1)
     n_modes = n_modes_total ÷ 2
     n_times = length(time)
 
-    u_full  = zeros(total_dofs, n_times)
-    du_full = zeros(total_dofs, n_times)
+    u_full  = zeros(so.total_dofs, n_times)
+    du_full = zeros(so.total_dofs, n_times)
 
     for (i, t) in enumerate(time)
         T_now = T_func(t)

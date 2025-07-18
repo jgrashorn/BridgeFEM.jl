@@ -61,7 +61,5 @@ for (i,x_) in enumerate(x)
     end
 end
 
-
-
 plot(x, u[2:3:end], label="y")
 plot!(x, u_analytical, label="y analytical", linestyle=:dash, xlabel="x (m)", ylabel="y (m)")
