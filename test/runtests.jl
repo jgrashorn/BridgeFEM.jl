@@ -1,0 +1,49 @@
+using Test
+
+# Main test runner for BridgeFEM.jl
+# Works with current monolithic structure during transition period
+
+@testset verbose = true "BridgeFEM.jl Test Suite" begin
+    
+    @testset "Integration Tests - Current Monolithic Structure" begin
+        
+        @testset "Fixed Cantilever Static Analysis" begin
+            include("integration/test_cantilever.jl")
+        end
+        
+        @testset "Fixed Cantilever Dynamic Analysis" begin
+            include("integration/test_cantilever_dynamic.jl")
+        end
+        
+        @testset "Simply Supported Beam Static Analysis" begin
+            include("integration/test_beam.jl")
+        end
+        
+        @testset "Simply Supported Beam Dynamic Analysis" begin
+            include("integration/test_beam_dynamic.jl")
+        end
+    end
+    
+    # Future module tests will be added here as modules are extracted
+    # @testset "Unit Tests - Modular Structure" begin
+    #     @testset "Core Module Tests" begin
+    #         include("test_core.jl")
+    #     end
+    #     
+    #     @testset "Elements Module Tests" begin
+    #         include("test_elements.jl")
+    #     end
+    #     
+    #     @testset "Assembly Module Tests" begin
+    #         include("test_assembly.jl")
+    #     end
+    #     
+    #     @testset "Boundary Conditions Module Tests" begin
+    #         include("test_boundary_conditions.jl")
+    #     end
+    #     
+    #     @testset "I/O Module Tests" begin
+    #         include("test_io.jl")
+    #     end
+    # end
+end 
