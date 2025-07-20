@@ -1,0 +1,306 @@
+{
+  "model_config": {
+    "n_elements": 50,
+    "beam_length": 25.0,
+    "n_nodes": 51,
+    "n_dofs": 153,
+    "description": "Medium-sized bridge model for performance benchmarking"
+  },
+  "baseline_info": {
+    "julia_version": "1.11.6",
+    "package_versions": {
+      "DifferentialEquations": "latest",
+      "LinearAlgebra": "stdlib",
+      "SparseArrays": "stdlib",
+      "Arpack": "latest"
+    },
+    "system_info": {
+      "arch": "x86_64-linux-gnu",
+      "word_size": 64,
+      "cpu_threads": 24
+    },
+    "timestamp": "2025-07-20T18:43:07.748"
+  },
+  "metadata": {
+    "created_at": "2025-07-20T18:45:31.189",
+    "purpose": "Performance baseline before code reorganization",
+    "baseline_version": "1.0",
+    "validation_target": "≤5% performance degradation requirement",
+    "script_file": "performance_baseline.jl"
+  },
+  "benchmarks": {
+    "physical_ode_solving": {
+      "max_time_s": 0.206396406,
+      "min_time_s": 0.188373369,
+      "mean_memory_bytes": 1.29796968e8,
+      "individual_times_s": [
+        0.193470821,
+        0.188608204,
+        0.188373369,
+        0.189059575,
+        0.206396406
+      ],
+      "mean_time_s": 0.193181675,
+      "runs": 5,
+      "description": "Physical Space ODE Integration (beam_physical_ode!)",
+      "std_time_s": 0.006866452836787768
+    },
+    "sparse_matrix_analysis": {
+      "stiffness_matrix": {
+        "sparsity_ratio": 0.03225255243709684,
+        "nnz": 755,
+        "memory_estimate_bytes": 13304,
+        "size": [
+          153,
+          153
+        ]
+      },
+      "mass_matrix": {
+        "sparsity_ratio": 0.006535947712418301,
+        "nnz": 153,
+        "memory_estimate_bytes": 3672,
+        "size": [
+          153,
+          153
+        ]
+      }
+    },
+    "eigenvector_processing": {
+      "max_time_s": 0.000725908,
+      "min_time_s": 0.000219699,
+      "mean_memory_bytes": 254536.0,
+      "individual_times_s": [
+        0.000725908,
+        0.000243538,
+        0.000249554,
+        0.00025152,
+        0.000219699
+      ],
+      "mean_time_s": 0.0003380438,
+      "runs": 5,
+      "description": "Eigenvector Mass Normalization",
+      "std_time_s": 0.0001942638866247662
+    },
+    "ode_time_scaling": [
+      {
+        "max_time_s": 0.008146772,
+        "min_time_s": 0.006558536,
+        "mean_memory_bytes": 5.6298e6,
+        "individual_times_s": [
+          0.008146772,
+          0.006558536,
+          0.007008162
+        ],
+        "mean_time_s": 0.007237823333333333,
+        "runs": 3,
+        "description": "Time Scaling: 1.0s Duration",
+        "std_time_s": 0.0006684218448182422
+      },
+      {
+        "max_time_s": 0.008867065,
+        "min_time_s": 0.007351319,
+        "mean_memory_bytes": 5.874904e6,
+        "individual_times_s": [
+          0.008867065,
+          0.008243513,
+          0.007351319
+        ],
+        "mean_time_s": 0.008153965666666667,
+        "runs": 3,
+        "description": "Time Scaling: 5.0s Duration",
+        "std_time_s": 0.0006220319004731367
+      },
+      {
+        "max_time_s": 0.010018243,
+        "min_time_s": 0.009368941,
+        "mean_memory_bytes": 6.044264e6,
+        "individual_times_s": [
+          0.010018243,
+          0.009368941,
+          0.009667065
+        ],
+        "mean_time_s": 0.009684749666666667,
+        "runs": 3,
+        "description": "Time Scaling: 10.0s Duration",
+        "std_time_s": 0.0002653712272488398
+      }
+    ],
+    "matrix_assembly": {
+      "max_time_s": 0.001315711,
+      "min_time_s": 0.000869507,
+      "mean_memory_bytes": 257008.0,
+      "individual_times_s": [
+        0.001315711,
+        0.000983697,
+        0.000980984,
+        0.000869507,
+        0.000973194
+      ],
+      "mean_time_s": 0.0010246186000000001,
+      "runs": 5,
+      "description": "Matrix Assembly (assemble_matrices)",
+      "std_time_s": 0.00015166900734243628
+    },
+    "modal_ode_solving": {
+      "max_time_s": 0.007379792,
+      "min_time_s": 0.005767359,
+      "mean_memory_bytes": 5.875e6,
+      "individual_times_s": [
+        0.007379792,
+        0.005767359,
+        0.007125279,
+        0.006832768,
+        0.006661928
+      ],
+      "mean_time_s": 0.0067534252000000005,
+      "runs": 5,
+      "description": "Modal Space ODE Integration (beam_modal_ode!)",
+      "std_time_s": 0.0005509272520067963
+    },
+    "element_stiffness": {
+      "max_time_s": 5.0776e-5,
+      "min_time_s": 2.8573e-5,
+      "mean_memory_bytes": 2736.0,
+      "individual_times_s": [
+        2.9222e-5,
+        3.5991e-5,
+        2.9427e-5,
+        2.8573e-5,
+        5.0776e-5
+      ],
+      "mean_time_s": 3.47978e-5,
+      "runs": 5,
+      "description": "Element Stiffness Matrix (frame_elem_stiffness)",
+      "std_time_s": 8.431011502779487e-6
+    },
+    "ode_analysis": {
+      "performance_ratios": {
+        "time_step_ratio": 0.002,
+        "modal_vs_physical_dofs": 0.06535947712418301,
+        "data_points_per_second": 100.2
+      },
+      "solver_statistics": {
+        "success": false,
+        "default_solver": "CompositeAlgorithm{0, Tuple{Tsit5{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}, Vern7{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}, Rosenbrock23{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}, Rodas5P{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}, FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}, FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}}, OrdinaryDiffEqCore.AutoSwitchCache{Tuple{Tsit5{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}, Vern7{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}}, Tuple{Rosenbrock23{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}, Rodas5P{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}, FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}, FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}}, Rational{Int64}, Int64}}((Tsit5{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}(OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, static(false)), Vern7{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}(OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, static(false), true), Rosenbrock23{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}(nothing, OrdinaryDiffEqCore.DEFAULT_PRECS, OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff()), Rodas5P{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}(nothing, OrdinaryDiffEqCore.DEFAULT_PRECS, OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff()), FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}(Val{5}(), nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}(1//100, 10, 1//5, 1//5, false, true, nothing), OrdinaryDiffEqCore.DEFAULT_PRECS, nothing, nothing, :linear, :Standard, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff()), FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}(Val{5}(), KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}(Krylov.gmres!, 0, 0, nothing, (), Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}()), NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}(1//100, 10, 1//5, 1//5, false, true, nothing), OrdinaryDiffEqCore.DEFAULT_PRECS, nothing, nothing, :linear, :Standard, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff())), OrdinaryDiffEqCore.AutoSwitchCache{Tuple{Tsit5{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}, Vern7{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}}, Tuple{Rosenbrock23{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}, Rodas5P{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}, FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}, FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}}, Rational{Int64}, Int64}(54, 0, (Tsit5{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}(OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, static(false)), Vern7{typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!), Static.False}(OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, static(false), true)), (Rosenbrock23{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}(nothing, OrdinaryDiffEqCore.DEFAULT_PRECS, OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff()), Rodas5P{0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!), typeof(OrdinaryDiffEqCore.trivial_limiter!)}(nothing, OrdinaryDiffEqCore.DEFAULT_PRECS, OrdinaryDiffEqCore.trivial_limiter!, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff()), FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, Nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}(Val{5}(), nothing, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}(1//100, 10, 1//5, 1//5, false, true, nothing), OrdinaryDiffEqCore.DEFAULT_PRECS, nothing, nothing, :linear, :Standard, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff()), FBDF{5, 0, AutoFiniteDiff{Val{:forward}, Val{:forward}, Val{:hcentral}, Nothing, Nothing, Int64}, KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}, NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}, typeof(OrdinaryDiffEqCore.DEFAULT_PRECS), Val{:forward}(), true, nothing, Nothing, Nothing, typeof(OrdinaryDiffEqCore.trivial_limiter!)}(Val{5}(), KrylovJL{typeof(Krylov.gmres!), Int64, Nothing, Tuple{}, Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}}(Krylov.gmres!, 0, 0, nothing, (), Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}()), NLNewton{Rational{Int64}, Rational{Int64}, Rational{Int64}, Nothing}(1//100, 10, 1//5, 1//5, false, true, nothing), OrdinaryDiffEqCore.DEFAULT_PRECS, nothing, nothing, :linear, :Standard, OrdinaryDiffEqCore.trivial_limiter!, AutoFiniteDiff())), true, 10, 3, 9//10, 9//10, 2, false, 5, 3))",
+        "solution_steps": 501
+      },
+      "problem_characteristics": {
+        "time_points": 501,
+        "modal_dofs": 10,
+        "time_span_s": 5.0,
+        "physical_dofs": 153,
+        "solution_size": [
+          20,
+          501
+        ]
+      }
+    },
+    "stiffness_assembly": {
+      "max_time_s": 0.000753328,
+      "min_time_s": 0.000657144,
+      "mean_memory_bytes": 230528.0,
+      "individual_times_s": [
+        0.000753328,
+        0.000715099,
+        0.000739379,
+        0.000657144,
+        0.000723359
+      ],
+      "mean_time_s": 0.0007176618000000001,
+      "runs": 5,
+      "description": "Stiffness Matrix Assembly (assemble_stiffness!)",
+      "std_time_s": 3.3000438623751655e-5
+    },
+    "eigen_standard": {
+      "max_time_s": 0.008507944,
+      "min_time_s": 0.008001833,
+      "mean_memory_bytes": 1.537144e6,
+      "individual_times_s": [
+        0.008001833,
+        0.008143698,
+        0.008100845,
+        0.008136619,
+        0.008507944
+      ],
+      "mean_time_s": 0.0081781878,
+      "runs": 5,
+      "description": "Standard Eigenvalue Computation (LinearAlgebra.eigen, dense)",
+      "std_time_s": 0.0001724758458861994
+    },
+    "eigen_arpack": {
+      "max_time_s": 0.017123527,
+      "min_time_s": 0.015768656,
+      "mean_memory_bytes": 2.2508912e6,
+      "individual_times_s": [
+        0.017123527,
+        0.015768656,
+        0.016346073,
+        0.016374572,
+        0.016240911
+      ],
+      "mean_time_s": 0.0163707478,
+      "runs": 5,
+      "description": "Arpack Eigenvalue Computation (eigs)",
+      "std_time_s": 0.0004351257575632131
+    },
+    "eigenvalue_analysis": {
+      "numerical_properties": {
+        "eigenvalue_magnitudes": [
+          3.554483633343619e9,
+          4.074989036590056e9
+        ],
+        "eigenvalue_complex_parts": 0.0,
+        "condition_number_estimate": 5.413773462548127e17
+      },
+      "modal_characteristics": {
+        "modes_below_cutoff": 0,
+        "frequency_spacing_hz": -4.932576012757636,
+        "frequency_range_hz": [
+          9488.736598827223,
+          10159.757779062133
+        ],
+        "cutoff_frequency_hz": 500.0
+      },
+      "problem_size": {
+        "matrix_size": [
+          153,
+          153
+        ],
+        "modes_computed": 20,
+        "n_dofs": 153
+      }
+    },
+    "decompose_workflow": {
+      "max_time_s": 0.026661852,
+      "min_time_s": 0.025045305,
+      "mean_memory_bytes": 5.526304e6,
+      "individual_times_s": [
+        0.025045305,
+        0.025876414,
+        0.026165842,
+        0.025347644,
+        0.026661852
+      ],
+      "mean_time_s": 0.025819411400000002,
+      "runs": 5,
+      "description": "Complete Modal Decomposition Workflow (decompose_matrices)",
+      "std_time_s": 0.0005752868536261195
+    },
+    "ode_tight_tolerance": {
+      "max_time_s": 0.044281357,
+      "min_time_s": 0.031105274,
+      "mean_memory_bytes": 3.0775672e7,
+      "individual_times_s": [
+        0.031105274,
+        0.031817479,
+        0.031796422,
+        0.034255259,
+        0.044281357
+      ],
+      "mean_time_s": 0.0346511582,
+      "runs": 5,
+      "description": "Modal ODE with Tight Tolerances (reltol=1e-8)",
+      "std_time_s": 0.004932545315432892
+    }
+  }
+}
