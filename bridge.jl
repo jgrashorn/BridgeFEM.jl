@@ -151,16 +151,3 @@ anim_fast = animate_dynamic_response(bo, supports, u_subsample, time_subsample,
                                    fps=24,
                                    filename="bridge_dynamics.gif")
 
-# support_dof_maps, total_dofs = create_support_dof_mapping(bo, supports)
-
-# 2. Plot specific mode shape
-# mode_num = 3
-# mode_shape = Φ_T(50.0)[:,mode_num]  # First mode at first temperature
-
-# plot_mode_shape(bo, supports, mode_shape, mode_num, scale_factor=10000.0)
-
-# # 3. Animate a mode
-# mode_num = 1
-# mode_shape = vectors_unnormalized[:, mode_num, 1]  # Second mode
-# anim = animate_mode(bo, supports, mode_shape, mode_num, scale_factor=10.0, fsize=(800, 600))
-# gif(anim, "mode2_animation.gif", fps=15)

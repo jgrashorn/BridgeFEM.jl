@@ -15,3 +15,5 @@
 *.jpeg
 *.svg
 *.pdf
+
+.vscode/*
