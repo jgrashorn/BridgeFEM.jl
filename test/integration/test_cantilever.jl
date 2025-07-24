@@ -72,9 +72,9 @@ include("../../src/dynamic_simulation.jl")
         @test size(M) == size(K)
         @test size(M_) == size(K_)
         
-        # Test that boundary conditions reduce matrix size
-        @test size(M_)[1] < size(M)[1]
-        @test size(K_)[1] < size(K)[1]
+        # Test that boundary conditions maintain matrix size (penalty method approach)
+        @test size(M_) == size(M)
+        @test size(K_) == size(K)
     end
 
     @testset "Modal Analysis and Force Application" begin

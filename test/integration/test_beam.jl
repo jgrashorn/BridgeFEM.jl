@@ -106,9 +106,9 @@ include("../../src/dynamic_simulation.jl")
         @test isa(M_, Matrix)
         @test isa(K_, Matrix)
         
-        # Test that boundary conditions reduce matrix size
-        @test size(M_)[1] < size(M_T(20.0))[1]
-        @test size(K_)[1] < size(K_T(20.0))[1]
+        # Test that boundary conditions maintain matrix size (penalty method approach)
+        @test size(M_) == size(M_T(20.0))
+        @test size(K_) == size(K_T(20.0))
     end
 
     @testset "FEM Solution vs Analytical Simply Supported Beam Theory" begin
