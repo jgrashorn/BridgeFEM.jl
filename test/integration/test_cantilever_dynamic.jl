@@ -234,7 +234,7 @@ include("../../src/dynamic_simulation.jl")
         # Test eigenfrequencies at different temperatures
         for temp_val in [10.0, 20.0]
             λ = λ_T(temp_val)
-            frequencies = sqrt.(λ[:, 1]) / (2*π)  # Convert to Hz
+            frequencies = λ[:, 1]  # Already in Hz from decompose_matrices
             
             @test all(frequencies .> 0)  # All frequencies should be positive
             @test issorted(frequencies)  # Frequencies should be sorted
@@ -245,9 +245,8 @@ include("../../src/dynamic_simulation.jl")
             E_test = E0  # Use base modulus for analytical comparison
             f1_analytical = (1.875^2)/(2*π) * sqrt(E_test * I / (ρ * A * L^4))
             
-            # Allow for numerical differences (finite element vs analytical)
-            # TODO: Investigate large discrepancy between FEM and analytical frequencies
-            @test abs(frequencies[1] - f1_analytical) / f1_analytical < 0.95  # Relaxed tolerance due to implementation differences
+            # Allow for numerical differences (finite element vs analytical)  
+            @test abs(frequencies[1] - f1_analytical) / f1_analytical < 0.3
         end
         
         # Test that mode shapes are orthogonal
