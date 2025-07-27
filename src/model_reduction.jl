@@ -1,3 +1,6 @@
+# Import Core types for modular access
+using ..BridgeFEM: SimulationOptions
+
 function decompose_matrices(M, K)
     # Collect mode shapes at different temperatures
     n_dof = size(M, 1)
