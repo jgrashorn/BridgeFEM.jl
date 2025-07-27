@@ -479,7 +479,7 @@ end
 
 function assemble_matrices_with_supports(so::SimulationOptions)
     # Get DOF mappings
-    support_dof_maps, total_dofs = create_support_dof_mapping(bo, so.supports)
+    support_dof_maps, total_dofs = create_support_dof_mapping(so.bridge, so.supports)
     nTemps = length(so.temperatures)
     
     # Initialize expanded matrices
@@ -488,7 +488,7 @@ function assemble_matrices_with_supports(so::SimulationOptions)
     
     for (t, T) in enumerate(so.temperatures)
         # Assemble main bridge (already temperature-dependent)
-        M_bridge, K_bridge = assemble_matrices(bo, T)
+        M_bridge, K_bridge = assemble_matrices(so.bridge, T)
 
         M_ = zeros(so.total_dofs, so.total_dofs)
         K_ = zeros(so.total_dofs, so.total_dofs)
@@ -500,7 +500,7 @@ function assemble_matrices_with_supports(so::SimulationOptions)
         for (i, support) in enumerate(so.supports)
             # Get local support matrices at temperature T
             K_local = assemble_local_support(support, T)  # FIXED: Pass temperature
-            M_local = create_support_mass_matrix(support, bo.ρ)  # Mass not temperature dependent
+            M_local = create_support_mass_matrix(support, so.bridge.ρ)  # Mass not temperature dependent
             
             # Rotate BOTH matrices to global coordinates
             n_support_nodes = support.n_elem + 1
