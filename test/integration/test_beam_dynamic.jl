@@ -1,6 +1,7 @@
-# Simply Supported Beam Dynamic Analysis Test
+# Clamped-Simply Supported Beam Dynamic Analysis Test
 # Converted from tests/simply_supported_beam_dynamic.jl to Test.jl framework
 # Maintains current include patterns during transition period
+# Note: This test uses clamped-simply supported boundary conditions, not pure simply supported
 
 using Test
 using LinearAlgebra, DifferentialEquations, Plots
@@ -13,7 +14,7 @@ include("../../src/model_reduction.jl")
 include("../../src/utils.jl")
 include("../../src/dynamic_simulation.jl")
 
-@testset "Simply Supported Beam Dynamic Analysis" begin
+@testset "Clamped-Simply Supported Beam Dynamic Analysis" begin
 
     @testset "Dynamic Model Setup and Configuration" begin
         # Beam and material parameters
@@ -265,14 +266,14 @@ include("../../src/dynamic_simulation.jl")
         @test maximum(abs.(u_physical_center)) > 1e-6
     end
 
-    @testset "Eigenfrequency Validation and Simply Supported Beam Properties" begin
+    @testset "Eigenfrequency Validation and Clamped-Simply Supported Beam Properties" begin
         # Setup
         L = 10.0; n_elem = 12; n_node = n_elem + 1
         ρ = 7800.0; A = .1; I = .001; E0 = 207e9; α = -1e5; cutoff_freq = 500.0
         
         bc = BridgeBC([
-            [1, "trans"],
-            [n_node, "y"]
+            [1, "trans"],  # Node 1: both x and y translations constrained (clamped)
+            [n_node, "y"]  # Node n_node: y-translation constrained (simple support)
         ])
         
         bo = BridgeOptions(n_elem, bc, L, ρ, A, I, [-100 E0; 70 E0], cutoff_freq)
@@ -286,20 +287,18 @@ include("../../src/dynamic_simulation.jl")
         # Test eigenfrequencies at different temperatures
         for temp_val in [10.0, 20.0]
             λ = λ_T(temp_val)
-            frequencies = sqrt.(λ[:, 1]) / (2*π)  # Convert to Hz
+            frequencies = λ[:, 1]  # Already in Hz from decompose_matrices
             
             @test all(frequencies .> 0)  # All frequencies should be positive
             @test issorted(frequencies)  # Frequencies should be sorted
             @test frequencies[1] < cutoff_freq  # At least first mode below cutoff
             
-            # Test analytical simply supported beam first frequency (approximate)
-            # First natural frequency of simply supported beam: f1 = (π²/2) * sqrt(EI/(ρAL^4))
+            # Test analytical clamped-simply supported beam first frequency (approximate)
             E_test = E0  # Use base modulus for analytical comparison
-            f1_analytical = (π^2/2) * sqrt(E_test * I / (ρ * A * L^4)) / (2*π)
+            f1_analytical = (3.9266^2/(2*π)) * sqrt(E_test * I / (ρ * A * L^4))
             
             # Allow for numerical differences (finite element vs analytical)  
-            # TODO: Investigate large discrepancy between FEM and analytical frequencies
-            @test abs(frequencies[1] - f1_analytical) / f1_analytical < 0.95  # Relaxed tolerance due to implementation differences
+            @test abs(frequencies[1] - f1_analytical) / f1_analytical < 0.1
         end
         
         # Test that mode shapes are orthogonal
