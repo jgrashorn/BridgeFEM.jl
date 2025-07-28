@@ -11,57 +11,19 @@ using ..BridgeFEM: bridge_options_to_dict, dict_to_bridge_options
 using ..BridgeFEM: support_element_to_dict, dict_to_support_element
 using ..BridgeFEM: simulation_options_to_dict, load_simulation_options, save_simulation_options
 
+# Import Elements module functions
+using ..BridgeFEM: frame_elem_stiffness, transformation_matrix, rotated_stiffness
+using ..BridgeFEM: frame_elem_mass, create_support_mass_matrix
+using ..BridgeFEM: assemble_local_support, create_expanded_transformation
 
-function frame_elem_stiffness(EA, EI, L_e)
-    c1 = EA / L_e
-    c2 = 12.0 * EI / L_e^3
-    c3 = 6.0 * EI / L_e^2
-    c4 = 4.0 * EI / L_e
-    c5 = 2.0 * EI / L_e
-    
-    k = [
-        c1    0.0   0.0     -c1   0.0   0.0;
-        0.0   c2    c3      0.0   -c2   c3;
-        0.0   c3    c4      0.0   -c3   c5;
-        -c1   0.0   0.0     c1    0.0   0.0;
-        0.0   -c2   -c3     0.0   c2    -c3;
-        0.0   c3    c5      0.0   -c3   c4
-    ]
-    return k
-end
 
-function frame_elem_mass(ρ::Float64, A::Float64, L::Float64)
-    mass_factor = ρ * A * L / 420.0
-    
-    M = mass_factor * [
-        140   0      0     70    0      0    ;
-        0     156    22L   0     54    -13L  ;
-        0     22L    4L^2  0     13L   -3L^2 ;
-        70    0      0     140   0      0    ;
-        0     54     13L   0     156   -22L  ;
-        0    -13L   -3L^2  0    -22L    4L^2
-    ]
-    
-    return M
-end
 
-function transformation_matrix(θ)
-    c = cosd(θ)
-    s = sind(θ)
-    T = Matrix{Float64}(LinearAlgebra.I, 6, 6)
-    T[1,1] =  c; T[1,2] =  s
-    T[2,1] = -s; T[2,2] =  c
-    T[4,4] =  c; T[4,5] =  s
-    T[5,4] = -s; T[5,5] =  c
-    return T
-end
 
-function rotated_stiffness(support::SupportElement)
-    ke_local = frame_elem_stiffness(support.EA, support.EI, support.L)
-    Te = transformation_matrix(support.angle)
-    ke_global = Te' * ke_local * Te
-    return ke_global, support.dofs
-end
+
+
+
+
+
 
 # Assemble global stiffness matrix
 function assemble_stiffness!(K, bo::BridgeOptions, EA, EI)
@@ -143,28 +105,7 @@ function apply_bc(M::Array{Float64,3}, K::Array{Float64,3}, so::SimulationOption
     return M_, K_
 end
 
-function assemble_local_support(support::SupportElement, T::Float64=20.0)
-    n_nodes = support.n_elem + 1
-    n_dofs = 3 * n_nodes
-    dx = support.L / support.n_elem
-    
-    K_local = zeros(n_dofs, n_dofs)
-    
-    # Get temperature-dependent Young's modulus
-    E = support.E(T)
-    EA = E * support.A
-    EI = E * support.I
-    
-    # Assemble support elements
-    for e = 1:support.n_elem
-        ke = frame_elem_stiffness(EA, EI, dx)
-        # DOFs for element e: nodes e and e+1
-        dofs = [3*(e-1)+1, 3*(e-1)+2, 3*(e-1)+3, 3*e+1, 3*e+2, 3*e+3]
-        K_local[dofs, dofs] .+= ke
-    end
-    
-    return K_local
-end
+
 
 function create_support_dof_mapping(bo::BridgeOptions, supports::Vector{SupportElement})
     
@@ -331,43 +272,9 @@ function remove_fixed_dofs(M, K, bc_dofs::Vector{Int}, total_dofs::Int)
     return M_, K_, retained_dofs, removed_dofs
 end
 
-function create_expanded_transformation(angle::Float64, n_nodes::Int)
-    n_dofs = 3 * n_nodes
-    T_expanded = Matrix{Float64}(LinearAlgebra.I, n_dofs, n_dofs)
-    
-    T_single = transformation_matrix(angle)
-    
-    for node = 1:n_nodes
-        dof_start = 3 * (node - 1) + 1
-        dof_end = dof_start + 2
-        
-        # Apply 2D rotation to x,y DOFs (rotation DOF unchanged)
-        T_expanded[dof_start:dof_start+1, dof_start:dof_start+1] = T_single[1:2, 1:2]
-    end
-    
-    return T_expanded
-end
 
-function create_support_mass_matrix(support::SupportElement, ρ::Float64)
-    n_nodes = support.n_elem + 1
-    n_dofs = 3 * n_nodes
-    dx = support.L / support.n_elem
-    
-    M_local = zeros(n_dofs, n_dofs)
-    
-    # Mass matrix is not temperature dependent (density and geometry constant)
-    # Use reference area for mass calculation
-    A_ref = support.A
-    
-    # Assemble mass matrix for each element
-    for e = 1:support.n_elem
-        me = frame_elem_mass(ρ, A_ref, dx)
-        dofs = [3*(e-1)+1, 3*(e-1)+2, 3*(e-1)+3, 3*e+1, 3*e+2, 3*e+3]
-        M_local[dofs, dofs] .+= me
-    end
-    
-    return M_local
-end
+
+
 
 function interpolate_matrix(M::Array{Float64,3}, Ts::Vector{Float64})
     M_interp = interpolate((1:size(M,1), 1:size(M,2), Ts), M, Gridded(Linear()))

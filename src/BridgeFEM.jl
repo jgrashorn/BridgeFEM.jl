@@ -13,7 +13,7 @@ material properties, dynamic analysis capabilities, and modular architecture.
 
 ## Modules
 - **Core**: Fundamental data structures and constants
-- **Elements**: Element stiffness and mass matrices (planned)
+- **Elements**: Element stiffness and mass matrices
 - **Assembly**: Global matrix assembly (planned)
 - **BoundaryConditions**: Constraint application (planned)
 - **Dynamics**: Dynamic simulation (planned)
@@ -35,6 +35,10 @@ sim_opts = load_simulation_options("config.json")
 """
 module BridgeFEM
 
+# Required imports for the module
+using LinearAlgebra
+using Interpolations
+
 # Core module exports - fundamental types and functionality
 include("Core/constants.jl")
 include("Core/types.jl")
@@ -50,9 +54,15 @@ export bridge_options_to_dict, dict_to_bridge_options
 export support_element_to_dict, dict_to_support_element  
 export simulation_options_to_dict, load_simulation_options, save_simulation_options
 
-# Future module exports (will be uncommented as modules are implemented)
-# Elements module
-# export frame_elem_stiffness, frame_elem_mass
+# Elements modules - finite element computations
+include("Elements/stiffness.jl")
+include("Elements/mass.jl") 
+include("Elements/supports.jl")
+
+# Export Elements module functions
+export frame_elem_stiffness, transformation_matrix, rotated_stiffness
+export frame_elem_mass, create_support_mass_matrix
+export assemble_local_support, create_expanded_transformation
 
 # Assembly module  
 # export assemble_matrices, create_support_dof_mapping
