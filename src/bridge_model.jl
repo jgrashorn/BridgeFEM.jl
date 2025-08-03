@@ -264,13 +264,6 @@ function transformation_matrix(θ)
     return T
 end
 
-function rotated_stiffness(support::SupportElement)
-    ke_local = frame_elem_stiffness(support.EA, support.EI, support.L)
-    Te = transformation_matrix(support.angle)
-    ke_global = Te' * ke_local * Te
-    return ke_global, support.dofs
-end
-
 # Assemble global stiffness matrix
 function assemble_stiffness!(K, bo::BridgeOptions, EA, EI)
     dx = bo.L / bo.n_elem
@@ -412,35 +405,6 @@ function create_support_dof_mapping(bo::BridgeOptions, supports::Vector{SupportE
     
     total_dofs = global_dof_offset
     return support_dof_maps, total_dofs
-end
-
-function get_node_from_dof(so::SimulationOptions, dof::Int)
-
-    node = dof <= so.bridge.n_dofs ? dof ÷ 3 : begin
-        for support_map in so.support_dof_mapping
-            node = findfirst(==(dof),support_map)
-            if !isempty(node)
-                return so.bridge.n_elem + 1 + node
-            end
-        end
-    end
-
-    return node
-
-end
-
-function get_dof_from_node(so::SimulationOptions,node::Int)
-    # Get the DOF mapping for the given node
-    dof_map = node < so.bridge.n_dofs ? 3 * (node - 1) .+ [1, 2, 3] : begin
-        
-        # Check if node has support connections
-        for support in so.supports
-            if support.connection_node == node
-                dof_map = support.connection_dofs
-                return dof_map
-            end
-        end
-    end
 end
 
 function get_dof_from_node(bridge::BridgeOptions, supports::Vector{SupportElement}, node::Int)
