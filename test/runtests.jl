@@ -9,6 +9,10 @@ using Test
         @testset "Core Module Tests" begin
             include("test_core.jl")
         end
+        
+        @testset "Elements Module Tests" begin
+            include("test_elements.jl")
+        end
     end
     
     # Integration tests temporarily disabled during modularization
