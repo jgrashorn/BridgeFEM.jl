@@ -14,7 +14,7 @@ material properties, dynamic analysis capabilities, and modular architecture.
 ## Modules
 - **Core**: Fundamental data structures and constants
 - **Elements**: Element stiffness and mass matrices
-- **Assembly**: Global matrix assembly (planned)
+- **Assembly**: Global matrix assembly and DOF management
 - **BoundaryConditions**: Constraint application (planned)
 - **Dynamics**: Dynamic simulation (planned)
 - **IO**: Configuration and results persistence (planned)
@@ -43,6 +43,10 @@ include("Core/types.jl")
 include("Elements/finite_elements.jl")
 using .FiniteElements
 
+# Assembly modules - global matrix assembly and DOF management
+include("Assembly/matrices.jl")
+include("Assembly/dof_mapping.jl")
+
 # Export Core types and constants
 export BCTypes
 
@@ -57,10 +61,12 @@ export simulation_options_to_dict, load_simulation_options, save_simulation_opti
 # Elements module exports - finite element computations
 export frame_elem_stiffness, frame_elem_mass, transformation_matrix
 
-# Future module exports (will be uncommented as modules are implemented)
+# Assembly module exports - global matrix assembly and DOF management
+export assemble_matrices, assemble_stiffness!, assemble_matrices_with_supports
+export create_support_dof_mapping, get_dof_from_node, get_bc_dofs
+export assemble_local_support, create_support_mass_matrix, create_expanded_transformation
 
-# Assembly module  
-# export assemble_matrices, create_support_dof_mapping
+# Future module exports (will be uncommented as modules are implemented)
 
 # BoundaryConditions module
 # export apply_bc, get_bc_dofs

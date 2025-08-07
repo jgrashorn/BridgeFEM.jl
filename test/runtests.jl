@@ -13,6 +13,14 @@ using Test
         @testset "Elements Module Tests" begin
             include("test_elements.jl")
         end
+
+        @testset "Assembly Module Tests" begin
+            include("test_assembly.jl")
+        end
+
+        @testset "Simple Assembly Module Tests" begin
+            include("test_assembly_simple.jl")
+        end
     end
     
     # Integration tests temporarily disabled during modularization
