@@ -114,34 +114,15 @@ mutable struct BridgeOptions
     end
 end
 
-# JSON serialization functions for BridgeOptions
-function bridge_options_to_dict(bo::BridgeOptions)
-    return Dict(
-        "n_elem" => bo.n_elem,
-        "bc_nodes" => [[c[1], c[2]] for c in bo.bc_nodes.conds],
-        "L" => bo.L,
-        "ρ" => bo.ρ,
-        "A" => bo.A,
-        "I" => bo.I,
-        "E_T" => [bo.E_T[i, :] for i in 1:size(bo.E_T, 1)],
-        "cutoff_freq" => bo.cutoff_freq
-    )
-end
-
-function dict_to_bridge_options(dict::Dict)
-    E_T_mat = Float64.(reduce(vcat, [row' for row in dict["E_T"]]))
-    bconds = BridgeBC([c for c in dict["bc_nodes"]])
-    return BridgeOptions(
-        dict["n_elem"],
-        bconds,
-        dict["L"],
-        dict["ρ"],
-        dict["A"],
-        dict["I"],
-        E_T_mat,
-        dict["cutoff_freq"],
-    )
-end
+# JSON serialization functions moved to IO module (src/IO/serialization.jl)
+# - bridge_options_to_dict(bo::BridgeOptions) 
+# - dict_to_bridge_options(dict::Dict)
+# - support_element_to_dict(se::SupportElement)
+# - dict_to_support_element(dict::Dict)
+# - simulation_options_to_dict(opts::SimulationOptions)
+# - save_simulation_options(opts, filename)
+# - load_simulation_options(filename)
+# These functions are now available from the main BridgeFEM module
 
 """
     SupportElement
@@ -270,87 +251,4 @@ function SimulationOptions(bridge::BridgeOptions, temperatures::Vector{Float64};
     return SimulationOptions(bridge, supports, temperatures; damping_ratio=damping_ratio)
 end
 
-# JSON serialization functions for SupportElement
-function support_element_to_dict(se::SupportElement)
-    return Dict(
-        "connection_node" => se.connection_node,
-        "connection_dofs" => se.connection_dofs,
-        "angle" => se.angle,
-        "n_elem" => se.n_elem,
-        "A" => se.A,
-        "I" => se.I,
-        "E_T" => [se.E_T[i, :] for i in 1:size(se.E_T, 1)],  # Save temperature-E data
-        "L" => se.L,
-        "bc_bottom" => se.bc_bottom
-    )
-end
-
-function dict_to_support_element(dict::Dict)
-    E_T_mat = Float64.(reduce(vcat, [row' for row in dict["E_T"]]))
-    return SupportElement(
-        dict["connection_node"],
-        Vector{Int}(dict["connection_dofs"]),
-        dict["angle"],
-        dict["n_elem"],
-        dict["A"],
-        dict["I"],
-        E_T_mat,  # Use temperature-dependent data
-        dict["L"],
-        Vector{Int}(dict["bc_bottom"])
-    )
-end
-
-# JSON serialization functions for SimulationOptions
-function simulation_options_to_dict(opts::SimulationOptions)
-    return Dict(
-        "bridge" => bridge_options_to_dict(opts.bridge),
-        "supports" => [support_element_to_dict(s) for s in opts.supports],
-        "temperatures" => opts.temperatures,
-        "damping_ratio" => opts.damping_ratio,
-        "total_dofs" => opts.total_dofs,
-        "total_elements" => opts.total_elements,
-        "created_at" => opts.created_at,
-    )
-end
-
-"""
-    load_simulation_options(filename::String) -> SimulationOptions
-
-Load simulation configuration from JSON file with full type reconstruction.
-
-Reconstructs all temperature-dependent interpolation functions and validates data integrity.
-"""
-function load_simulation_options(filename::String)::SimulationOptions
-    dict_data = JSON.parsefile(filename)
-    
-    # Reconstruct bridge options
-    bridge = dict_to_bridge_options(dict_data["bridge"])
-    
-    # Reconstruct support elements
-    supports = [dict_to_support_element(s) for s in dict_data["supports"]]
-    
-    # Extract other parameters
-    temperatures = Vector{Float64}(dict_data["temperatures"])
-    
-    return SimulationOptions(
-        bridge,
-        supports,
-        temperatures;
-        damping_ratio = dict_data["damping_ratio"]
-    )
-end
-
-"""
-    save_simulation_options(opts::SimulationOptions, filename::String)
-
-Save simulation configuration to JSON file with pretty formatting.
-
-Preserves exact JSON structure compatibility for existing research workflows.
-"""
-function save_simulation_options(opts::SimulationOptions, filename::String)
-    dict_data = simulation_options_to_dict(opts)
-    open(filename, "w") do f
-        JSON.print(f, dict_data, 2)  # Pretty print with 2-space indentation
-    end
-    @info "Simulation options saved to: $filename"
-end 
+ 

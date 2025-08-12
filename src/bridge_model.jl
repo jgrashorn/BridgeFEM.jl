@@ -7,6 +7,11 @@ using Dates
 
 # Import Core types and constants
 using ..BridgeFEM: BCTypes, BridgeBC, BridgeOptions, SupportElement, SimulationOptions
+
+# Import BoundaryConditions module functions
+using ..BridgeFEM: apply_bc, remove_fixed_dofs
+
+# Import IO module functions  
 using ..BridgeFEM: bridge_options_to_dict, dict_to_bridge_options
 using ..BridgeFEM: support_element_to_dict, dict_to_support_element
 using ..BridgeFEM: simulation_options_to_dict, load_simulation_options, save_simulation_options
@@ -31,44 +36,10 @@ using ..BridgeFEM: assemble_local_support, create_support_mass_matrix, create_ex
 # - assemble_matrices(bo::BridgeOptions, T::Float64=20.0)
 # These functions are now imported from the main BridgeFEM module above
 
-function apply_bc(M::Matrix{Float64}, K::Matrix{Float64}, so::SimulationOptions)
-
-    bc_dofs = so.bc_dofs
-
-    n_dofs = size(K, 1)
-    
-    for bc in bc_dofs
-        node = bc[1]
-        # dof_types = bc[2]  # DOF type(s)
-        # dof_indices = 3 * (node - 1) .+ dof_types  # Convert to global DOF indices
-
-        dof_indices = node
-        
-        for d_ in dof_indices
-            # @info "Applying boundary condition at DOF $d_"
-            if d_ <= n_dofs  # Check bounds
-                K[:, d_] .= 0.0
-                K[d_, :] .= 0.0
-                K[d_, d_] = 1.0
-                M[d_, :] .= 0.0
-                M[:, d_] .= 0.0
-                M[d_, d_] = 0.0
-            end
-        end
-    end
-    return M, K
-end
-
-function apply_bc(M::Array{Float64,3}, K::Array{Float64,3}, so::SimulationOptions)
-
-    M_, K_ = zeros(size(M)), zeros(size(K))
-
-    for i in axes(M,3)
-        M_[:,:,i], K_[:,:,i] = apply_bc(M[:,:,i], K[:,:,i], so)
-    end
-
-    return M_, K_
-end
+# Boundary condition application functions moved to BoundaryConditions module
+# - apply_bc(M, K, so) - for both 2D and 3D arrays
+# - remove_fixed_dofs(M, K, bc_dofs, total_dofs)
+# These functions are now imported from the main BridgeFEM module above
 
 # DOF mapping and support assembly functions moved to Assembly module
 # - create_support_dof_mapping(bo::BridgeOptions, supports::Vector{SupportElement})
@@ -78,21 +49,7 @@ end
 # - assemble_matrices_with_supports(so::SimulationOptions)
 # These functions are now imported from the main BridgeFEM module above
 
-function remove_fixed_dofs(M, K, bc_dofs::Vector{Int}, total_dofs::Int)
-    # Remove fixed DOFs from mass and stiffness matrices
-    retained_dofs = setdiff(1:total_dofs, bc_dofs)
-    removed_dofs = bc_dofs
-    
-    if ndims(M) == 2
-        # 2D case (single temperature)
-        M_ = M[retained_dofs, retained_dofs]
-        K_ = K[retained_dofs, retained_dofs]
-        return M_, K_, retained_dofs, removed_dofs
-    end
-    M_ = M[retained_dofs, retained_dofs, :]
-    K_ = K[retained_dofs, retained_dofs, :]
-    return M_, K_, retained_dofs, removed_dofs
-end
+
 
 # Support matrix creation functions moved to Assembly module
 # - create_expanded_transformation(angle::Float64, n_nodes::Int)

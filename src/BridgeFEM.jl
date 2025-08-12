@@ -15,9 +15,9 @@ material properties, dynamic analysis capabilities, and modular architecture.
 - **Core**: Fundamental data structures and constants
 - **Elements**: Element stiffness and mass matrices
 - **Assembly**: Global matrix assembly and DOF management
-- **BoundaryConditions**: Constraint application (planned)
+- **BoundaryConditions**: Constraint application and DOF management
+- **IO**: Configuration and results persistence
 - **Dynamics**: Dynamic simulation (planned)
-- **IO**: Configuration and results persistence (planned)
 
 ## Quick Start
 ```julia
@@ -47,16 +47,19 @@ using .FiniteElements
 include("Assembly/matrices.jl")
 include("Assembly/dof_mapping.jl")
 
+# BoundaryConditions module - boundary condition application
+include("BoundaryConditions/application.jl")
+
+# IO module - JSON serialization and configuration persistence
+include("IO/serialization.jl")
+
 # Export Core types and constants
 export BCTypes
 
 # Export Core data structures
 export BridgeBC, BridgeOptions, SupportElement, SimulationOptions
 
-# Export JSON serialization functions
-export bridge_options_to_dict, dict_to_bridge_options
-export support_element_to_dict, dict_to_support_element  
-export simulation_options_to_dict, load_simulation_options, save_simulation_options
+
 
 # Elements module exports - finite element computations
 export frame_elem_stiffness, frame_elem_mass, transformation_matrix
@@ -66,13 +69,15 @@ export assemble_matrices, assemble_stiffness!, assemble_matrices_with_supports
 export create_support_dof_mapping, get_dof_from_node, get_bc_dofs
 export assemble_local_support, create_support_mass_matrix, create_expanded_transformation
 
+# BoundaryConditions module exports - boundary condition application
+export apply_bc, remove_fixed_dofs
+
+# IO module exports - JSON serialization and configuration persistence
+export bridge_options_to_dict, dict_to_bridge_options
+export support_element_to_dict, dict_to_support_element  
+export simulation_options_to_dict, load_simulation_options, save_simulation_options
+
 # Future module exports (will be uncommented as modules are implemented)
-
-# BoundaryConditions module
-# export apply_bc, get_bc_dofs
-
-# IO module
-# export save_results, load_results
 
 # Dynamics module
 # export simulate_dynamic_response
