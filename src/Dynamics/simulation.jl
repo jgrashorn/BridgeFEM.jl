@@ -1,3 +1,17 @@
+# Dynamics/simulation.jl - Dynamic simulation and ODE solving functions
+# Extracted from dynamic_simulation.jl
+
+using LinearAlgebra
+using DifferentialEquations
+
+# Import types from Core module - assumes this is included within BridgeFEM module
+# where Core types are already available
+
+"""
+    beam_modal_ode!(du, u, p, t)
+
+Modal space ODE function for beam dynamic analysis.
+"""
 function beam_modal_ode!(du, u, p, t)
     T = p.T_func(t)
     q     = u[1:p.n_modes]        # modal displacements
@@ -19,6 +33,11 @@ function beam_modal_ode!(du, u, p, t)
     du[p.n_modes+1:end] .= qddot
 end
 
+"""
+    beam_physical_ode!(du, u, p, t)
+
+Physical space ODE function for beam dynamic analysis.
+"""
 function beam_physical_ode!(du, u, p, t)
     # Unpack state vector
     du .= 0.0  # Reset derivative vector
@@ -58,5 +77,6 @@ function beam_physical_ode!(du, u, p, t)
     du_ff = A * u[u_dofs] + b
 
     du[u_dofs] .= du_ff
-
 end
+
+# End of Dynamics/simulation.jl

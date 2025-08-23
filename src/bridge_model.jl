@@ -24,6 +24,9 @@ using ..BridgeFEM: assemble_matrices, assemble_stiffness!, assemble_matrices_wit
 using ..BridgeFEM: create_support_dof_mapping, get_dof_from_node, get_bc_dofs  
 using ..BridgeFEM: assemble_local_support, create_support_mass_matrix, create_expanded_transformation
 
+# Import ModelReduction module functions
+using ..BridgeFEM: setup_ROM
+
 
 # Finite element functions moved to Elements module (src/Elements/finite_elements.jl)
 # - frame_elem_stiffness(EA, EI, L_e) 

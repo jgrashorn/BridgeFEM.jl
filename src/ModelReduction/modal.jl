@@ -1,6 +1,18 @@
-# Import Core types for modular access
-using ..BridgeFEM: SimulationOptions
+# ModelReduction/modal.jl - Modal analysis and eigenvalue computation functions
+# Extracted from model_reduction.jl
 
+using LinearAlgebra
+using Arpack
+using Interpolations
+
+# Import types from Core module - assumes this is included within BridgeFEM module
+# where Core types and functions are already available
+
+"""
+    decompose_matrices(M, K)
+
+Decompose mass and stiffness matrices to extract eigenvalues and eigenvectors.
+"""
 function decompose_matrices(M, K)
     # Collect mode shapes at different temperatures
     n_dof = size(M, 1)
@@ -36,7 +48,12 @@ function decompose_matrices(M, K)
             end
         end
 
-        ωs = sqrt.(real(λs))./ (2π)  # Convert eigenvalues to natural frequencies (Hz)
+        # Handle negative eigenvalues by taking absolute value and warning
+        λs_positive = abs.(real(λs))
+        if any(real(λs) .< 0)
+            @warn "Negative eigenvalues detected in modal analysis. Taking absolute values."
+        end
+        ωs = sqrt.(λs_positive)./ (2π)  # Convert eigenvalues to natural frequencies (Hz)
         Φ_tensor_unnormalized[:,:,i] .= Φ_tensor[:,:,i]
 
         # Mass-normalize the mode shapes
@@ -51,8 +68,12 @@ function decompose_matrices(M, K)
     return ω_matrix, Φ_tensor, Φ_tensor_unnormalized  # Return both normalized and unnormalized mode shapes
 end
 
-function assemble_and_decompose(so::SimulationOptions)
+"""
+    assemble_and_decompose(so::SimulationOptions)
 
+Assemble matrices with supports and decompose for modal analysis.
+"""
+function assemble_and_decompose(so::SimulationOptions)
     nTs = length(so.temperatures)
     @info "Assembling matrices with supports for $nTs temperatures"
     
@@ -80,14 +101,23 @@ function assemble_and_decompose(so::SimulationOptions)
     return M, K, λs, vectors, vectors_unnormalized
 end
 
-function setup_interpolation(λs::Matrix{Float64}, vectors::Array{Float64,3}, Ts::Vector{Float64})
+"""
+    setup_interpolation(λs::Matrix{Float64}, vectors::Array{Float64,3}, Ts::Vector{Float64})
 
+Set up interpolation functions for eigenvalues and eigenvectors.
+"""
+function setup_interpolation(λs::Matrix{Float64}, vectors::Array{Float64,3}, Ts::Vector{Float64})
     λ_T = interpolate_modes(λs, Ts)
     Φ_T = interpolate_modes(vectors, Ts)
 
     return λ_T, Φ_T
 end
 
+"""
+    interpolate_modes(vec::Matrix{Float64}, Ts)
+
+Create interpolation function for eigenvalue matrix.
+"""
 function interpolate_modes(vec::Matrix{Float64}, Ts)
     n_modes = size(vec, 1)
 
@@ -97,6 +127,11 @@ function interpolate_modes(vec::Matrix{Float64}, Ts)
     return λ_T
 end
 
+"""
+    interpolate_modes(mat::Array{Float64,3}, Ts)
+
+Create interpolation function for eigenvector tensor.
+"""
 function interpolate_modes(mat::Array{Float64,3}, Ts)
     n_modes = size(mat, 2)
     total_dofs = size(mat, 1)
@@ -107,8 +142,12 @@ function interpolate_modes(mat::Array{Float64,3}, Ts)
     return Φ_T
 end
 
+"""
+    reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
+
+Reconstruct physical space response from modal coordinates.
+"""
 function reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, time)
-    
     n_modes_total = size(q_full, 1)
     n_modes = n_modes_total ÷ 2
     n_times = length(time)
@@ -130,13 +169,18 @@ function reconstruct_physical(so::SimulationOptions, q_full, Φ_interp, T_func, 
     return u_full, du_full
 end
 
-function setup_ROM(so::SimulationOptions)
+"""
+    setup_ROM(so::SimulationOptions)
 
+Set up reduced order model for modal analysis.
+"""
+function setup_ROM(so::SimulationOptions)
     M, K, λs, vectors, vectors_unnormalized = assemble_and_decompose(so)
 
     n_modes = size(λs, 1)
     λ_T, Φ_T = setup_interpolation(λs, vectors, so.temperatures)
 
     return λ_T, Φ_T, n_modes
-
 end
+
+# End of ModelReduction/modal.jl
