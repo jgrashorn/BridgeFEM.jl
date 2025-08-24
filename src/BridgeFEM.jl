@@ -17,7 +17,8 @@ material properties, dynamic analysis capabilities, and modular architecture.
 - **Assembly**: Global matrix assembly and DOF management
 - **BoundaryConditions**: Constraint application and DOF management
 - **IO**: Configuration and results persistence
-- **Dynamics**: Dynamic simulation (planned)
+- **Dynamics**: Dynamic simulation and ODE solving
+- **ModelReduction**: Modal analysis and eigenvalue computation
 
 ## Quick Start
 ```julia
@@ -53,6 +54,12 @@ include("BoundaryConditions/application.jl")
 # IO module - JSON serialization and configuration persistence
 include("IO/serialization.jl")
 
+# Dynamics module - dynamic simulation and ODE solving
+include("Dynamics/simulation.jl")
+
+# ModelReduction module - modal analysis and eigenvalue computation
+include("ModelReduction/modal.jl")
+
 # Export Core types and constants
 export BCTypes
 
@@ -77,13 +84,14 @@ export bridge_options_to_dict, dict_to_bridge_options
 export support_element_to_dict, dict_to_support_element  
 export simulation_options_to_dict, load_simulation_options, save_simulation_options
 
+# Dynamics module exports - dynamic simulation and ODE solving
+export beam_modal_ode!, beam_physical_ode!
+
+# ModelReduction module exports - modal analysis and eigenvalue computation
+export decompose_matrices, assemble_and_decompose, setup_interpolation, 
+       interpolate_modes, reconstruct_physical, setup_ROM
+
 # Future module exports (will be uncommented as modules are implemented)
-
-# Dynamics module
-# export simulate_dynamic_response
-
-# ModelReduction module
-# export compute_modal_properties
 
 # Visualization module  
 # export plot_mode_shape, plot_response

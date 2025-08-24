@@ -21,8 +21,23 @@ using Test
         @testset "Simple Assembly Module Tests" begin
             include("test_assembly_simple.jl")
         end
+        
+        @testset "Dynamics Module Tests" begin
+            include("test_dynamics.jl")
+        end
+        
+        @testset "ModelReduction Module Tests" begin
+            include("test_model_reduction.jl")
+        end
+
+        @testset "BoundaryConditions Module Tests" begin
+            include("test_boundary_conditions.jl")
+        end
+
+        @testset "IO Module Tests" begin
+            include("test_io.jl")
+        end
     end
-    
     # Integration tests temporarily disabled during modularization
     # Will be re-enabled after all modules are extracted and updated
     # @testset "Integration Tests - Current Monolithic Structure" begin
@@ -43,4 +58,4 @@ using Test
     #         include("integration/test_beam_dynamic.jl")
     #     end
     # end
-end 
+end

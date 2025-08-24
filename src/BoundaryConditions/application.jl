@@ -43,7 +43,7 @@ This method preserves matrix symmetry and conditioning for finite element solver
 function apply_bc(M::Matrix{Float64}, K::Matrix{Float64}, so)::Tuple{Matrix{Float64}, Matrix{Float64}}
     bc_dofs = so.bc_dofs
     n_dofs = size(K, 1)
-    +
+    
     for bc in bc_dofs
         node = bc[1]
         # dof_types = bc[2]  # DOF type(s)
