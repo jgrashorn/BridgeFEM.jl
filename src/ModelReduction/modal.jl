@@ -48,12 +48,8 @@ function decompose_matrices(M, K)
             end
         end
 
-        # Handle negative eigenvalues by taking absolute value and warning
-        λs_positive = abs.(real(λs))
-        if any(real(λs) .< 0)
-            @warn "Negative eigenvalues detected in modal analysis. Taking absolute values."
-        end
-        ωs = sqrt.(λs_positive)./ (2π)  # Convert eigenvalues to natural frequencies (Hz)
+        ωs = sqrt.(real(λs))./ (2π)  # Convert eigenvalues to natural frequencies (Hz)
+
         Φ_tensor_unnormalized[:,:,i] .= Φ_tensor[:,:,i]
 
         # Mass-normalize the mode shapes
