@@ -2,10 +2,8 @@ using LinearAlgebra, DifferentialEquations, Plots
 using Interpolations
 using JSON
 
-include("src/bridge_model.jl")
-include("src/model_reduction.jl")
-include("src/utils.jl")
-include("src/dynamic_simulation.jl")
+# Use proper BridgeFEM module import
+using BridgeFEM
 
 # Beam and material parameters
 L = 20.0               # Beam length (m)
@@ -70,7 +68,7 @@ Ts = [-10.0, 20.0, 50.0]  # Temperatures in degrees Celsius
 sim_opts = SimulationOptions(
     bo, supports, collect(Ts), damping_ratio=0.02
 )
-save_simulation_options(sim_opts, "data/bridge_simulation_config.json")
+save_simulation_options(sim_opts, "bridge_simulation_config.json")
 
 M_T, K_T = setup_physical(sim_opts)
 λ_T, Φ_T, n_modes = setup_ROM(sim_opts)
