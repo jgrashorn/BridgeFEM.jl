@@ -16,7 +16,11 @@ identifying constrained degrees of freedom.
 - Core module: SimulationOptions and related types
 """
 
-# LinearAlgebra and SparseArrays are already imported in the main module
+using LinearAlgebra
+using SparseArrays
+
+# Import Core types
+using ..BridgeFEM: SimulationOptions
 
 """
     apply_bc(M::Matrix{Float64}, K::Matrix{Float64}, so) -> (Matrix{Float64}, Matrix{Float64})

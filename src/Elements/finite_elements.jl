@@ -1,13 +1,9 @@
-# Elements Module - Finite Element Computations
+# Elements/finite_elements.jl - Finite Element Computations
 # 
 # This module contains core finite element computation functions for frame elements
 # including stiffness matrices, mass matrices, and coordinate transformations.
 
-module FiniteElements
-
 using LinearAlgebra
-
-export frame_elem_stiffness, frame_elem_mass, transformation_matrix
 
 """
     frame_elem_stiffness(EA, EI, L_e)
@@ -100,5 +96,3 @@ function transformation_matrix(θ::Real)::Matrix{Float64}
     T[5,4] = -s; T[5,5] =  c
     return T
 end
-
-end # module FiniteElements
