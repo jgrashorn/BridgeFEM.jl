@@ -2,10 +2,8 @@ using LinearAlgebra, DifferentialEquations, Plots
 using Interpolations
 using JSON
 
-include("../src/bridge_model.jl")
-include("../src/model_reduction.jl")
-include("../src/utils.jl")
-include("../src/dynamic_simulation.jl")
+# Use proper BridgeFEM module import
+using BridgeFEM
 
 # Beam and material parameters
 L = 10.0               # Beam length (m)

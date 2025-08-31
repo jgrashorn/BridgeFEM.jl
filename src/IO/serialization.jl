@@ -20,7 +20,10 @@ maintaining exact compatibility with existing configuration file formats.
 - Core module: All data structure types (BridgeOptions, SupportElement, etc.)
 """
 
-# JSON is already imported in the main module
+using JSON
+
+# Import Core types  
+using ..BridgeFEM: BridgeOptions, SupportElement, SimulationOptions
 
 """
     bridge_options_to_dict(bo) -> Dict

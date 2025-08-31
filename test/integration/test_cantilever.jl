@@ -1,17 +1,14 @@
 # Fixed Cantilever Static Analysis Test
 # Converted from tests/fixed_cantilever.jl to Test.jl framework
-# Maintains current include patterns during transition period
+# Updated to use proper modular structure
 
 using Test
 using LinearAlgebra, DifferentialEquations, Plots
 using Interpolations
 using JSON
 
-# Include current monolithic structure
-include("../../src/bridge_model.jl")
-include("../../src/model_reduction.jl")
-include("../../src/utils.jl")
-include("../../src/dynamic_simulation.jl")
+# Use proper BridgeFEM module import
+using BridgeFEM
 
 @testset "Fixed Cantilever Static Analysis" begin
     

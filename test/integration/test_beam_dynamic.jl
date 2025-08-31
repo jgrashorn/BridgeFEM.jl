@@ -1,6 +1,6 @@
 # Clamped-Simply Supported Beam Dynamic Analysis Test
 # Converted from tests/simply_supported_beam_dynamic.jl to Test.jl framework
-# Maintains current include patterns during transition period
+# Updated to use proper modular structure
 # Note: This test uses clamped-simply supported boundary conditions, not pure simply supported
 
 using Test
@@ -8,11 +8,8 @@ using LinearAlgebra, DifferentialEquations, Plots
 using Interpolations
 using JSON
 
-# Include current monolithic structure
-include("../../src/bridge_model.jl")
-include("../../src/model_reduction.jl")
-include("../../src/utils.jl")
-include("../../src/dynamic_simulation.jl")
+# Use proper BridgeFEM module import
+using BridgeFEM
 
 @testset "Clamped-Simply Supported Beam Dynamic Analysis" begin
 

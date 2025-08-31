@@ -3,6 +3,7 @@
 
 using SparseArrays
 using LinearAlgebra
+using Interpolations
 
 # Import Core types and functions
 using ..BridgeFEM: BridgeOptions, SupportElement, SimulationOptions
@@ -233,4 +234,61 @@ function create_expanded_transformation(angle::Float64, n_nodes::Int)::Matrix{Fl
     end
     
     return T_expanded
+end
+
+"""
+    interpolate_matrix(M::Array{Float64,3}, Ts::Vector{Float64}) -> Function
+
+Create interpolation function for 3D matrix array across temperature dimension.
+
+# Arguments
+- `M::Array{Float64,3}`: 3D matrix array with temperature as third dimension
+- `Ts::Vector{Float64}`: Temperature values corresponding to third dimension
+
+# Returns
+- Function that interpolates matrix values at any temperature
+"""
+function interpolate_matrix(M::Array{Float64,3}, Ts::Vector{Float64})
+    M_interp = interpolate((1:size(M,1), 1:size(M,2), Ts), M, Gridded(Linear()))
+    M_T = t -> M_interp(1:size(M,1), 1:size(M,2), t)
+    return M_T
+end
+
+"""
+    setup_matrix_interpolation(M::Array{Float64,3}, K::Array{Float64,3}, Ts::Vector{Float64}) -> Tuple{Function, Function}
+
+Set up interpolation functions for mass and stiffness matrices across temperature.
+
+# Arguments
+- `M::Array{Float64,3}`: 3D mass matrix array with temperature as third dimension
+- `K::Array{Float64,3}`: 3D stiffness matrix array with temperature as third dimension  
+- `Ts::Vector{Float64}`: Temperature values corresponding to third dimension
+
+# Returns
+- `(M_T, K_T)`: Tuple of interpolation functions for mass and stiffness matrices
+"""
+function setup_matrix_interpolation(M::Array{Float64,3}, K::Array{Float64,3}, Ts::Vector{Float64})
+    # Create interpolation function for each temperature slice
+    M_T = interpolate_matrix(M, Ts)
+    K_T = interpolate_matrix(K, Ts)
+
+    # Return a function that evaluates the matrices at a given temperature
+    return M_T, K_T
+end
+
+"""
+    setup_physical(so::SimulationOptions) -> Tuple{Function, Function}
+
+Set up complete physical system with temperature-dependent matrix interpolation.
+
+# Arguments
+- `so::SimulationOptions`: Complete simulation configuration with bridge, supports, and temperatures
+
+# Returns
+- `(M_T, K_T)`: Tuple of interpolation functions for mass and stiffness matrices
+"""
+function setup_physical(so::SimulationOptions)
+    M, K = assemble_matrices_with_supports(so)
+    M_T, K_T = setup_matrix_interpolation(M, K, so.temperatures)
+    return M_T, K_T
 end

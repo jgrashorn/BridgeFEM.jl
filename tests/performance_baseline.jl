@@ -15,10 +15,8 @@ const DEFAULT_WARMUP_RUNS = 2
 const DEFAULT_BENCHMARK_RUNS = 5
 const PERFORMANCE_TOLERANCE_PERCENT = 5.0
 
-include("../src/bridge_model.jl")
-include("../src/model_reduction.jl")
-include("../src/utils.jl")
-include("../src/dynamic_simulation.jl")
+# Use proper BridgeFEM module import
+using BridgeFEM
 
 # Medium-sized bridge model configuration for consistent benchmarking
 function create_medium_bridge_model()

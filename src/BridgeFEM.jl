@@ -42,7 +42,6 @@ include("Core/types.jl")
 
 # Elements module - finite element computations
 include("Elements/finite_elements.jl")
-using .FiniteElements
 
 # Assembly modules - global matrix assembly and DOF management
 include("Assembly/matrices.jl")
@@ -60,6 +59,9 @@ include("Dynamics/simulation.jl")
 # ModelReduction module - modal analysis and eigenvalue computation
 include("ModelReduction/modal.jl")
 
+# Visualization module - plotting and visualization functions
+include("Visualization/plotting.jl")
+
 # Export Core types and constants
 export BCTypes
 
@@ -75,6 +77,7 @@ export frame_elem_stiffness, frame_elem_mass, transformation_matrix
 export assemble_matrices, assemble_stiffness!, assemble_matrices_with_supports
 export create_support_dof_mapping, get_dof_from_node, get_bc_dofs
 export assemble_local_support, create_support_mass_matrix, create_expanded_transformation
+export interpolate_matrix, setup_matrix_interpolation, setup_physical
 
 # BoundaryConditions module exports - boundary condition application
 export apply_bc, remove_fixed_dofs
@@ -91,9 +94,8 @@ export beam_modal_ode!, beam_physical_ode!
 export decompose_matrices, assemble_and_decompose, setup_interpolation, 
        interpolate_modes, reconstruct_physical, setup_ROM
 
-# Future module exports (will be uncommented as modules are implemented)
-
-# Visualization module  
-# export plot_mode_shape, plot_response
+# Visualization module exports - plotting and visualization functions
+export plot_bridge_with_supports, plot_mode_shape, animate_dynamic_response, 
+       animate_modal_response, animate_dof_response
 
 end # module BridgeFEM 

@@ -1,3 +1,34 @@
+# Visualization/plotting.jl - Plotting and visualization functions for bridge structures
+# Moved from utils.jl for better organization
+
+using Plots
+
+# Import Core types
+using ..BridgeFEM: BridgeOptions, SupportElement, SimulationOptions
+
+# Import Assembly functions needed for visualization
+using ..BridgeFEM: setup_physical
+
+# Import ModelReduction functions needed for modal visualization
+using ..BridgeFEM: reconstruct_physical
+
+"""
+    plot_bridge_with_supports(bo::BridgeOptions, supports::Vector{SupportElement}; kwargs...)
+
+Plot bridge structure with support elements and optional mode shapes or dynamic response.
+
+# Arguments
+- `bo::BridgeOptions`: Bridge configuration
+- `supports::Vector{SupportElement}`: Support elements to visualize
+- `mode_shape=nothing`: Optional mode shape for deformation visualization
+- `scale_factor=1.0`: Scaling factor for mode shape visualization
+- `T=20.0`: Temperature for thermal effects
+- `title="Bridge Structure"`: Plot title
+- `show_nodes=true`: Whether to show node markers
+
+# Returns
+- Plots.Plot object
+"""
 function plot_bridge_with_supports(bo::BridgeOptions, supports::Vector{SupportElement}; 
                                  mode_shape=nothing, scale_factor=1.0, T=20.0,
                                  title="Bridge Structure", show_nodes=true)
