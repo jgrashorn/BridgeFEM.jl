@@ -228,17 +228,16 @@ struct SimulationOptions
     created_at::String
 end
 
-# Simplified constructor for SimulationOptions without immediate DOF mapping computation
-# Note: This avoids dependency on create_support_dof_mapping and get_bc_dofs functions
-# which will be moved to other modules in future stories
 function SimulationOptions(bridge::BridgeOptions, supports::Vector{SupportElement}, temperatures::Vector{Float64}; 
                           damping_ratio=0.02)
-    # Temporary implementation - compute basic properties
+    # Compute proper DOF mapping and system properties
     total_elements = bridge.n_elem + (isempty(supports) ? 0 : sum(s.n_elem for s in supports))
-    # For now, assume simple DOF mapping - will be replaced when Assembly/BC modules are created
-    total_dofs = bridge.n_dofs + (isempty(supports) ? 0 : sum(s.n_elem + 1 for s in supports) * 3)
-    support_dof_mapping = Vector{Vector{Int}}()  # Empty for now
-    bc_dofs = Vector{Int}()  # Empty for now
+    
+    # Create support DOF mapping and get total DOFs
+    support_dof_mapping, total_dofs = create_support_dof_mapping(bridge, supports)
+    
+    # Get all boundary condition DOFs
+    bc_dofs = get_bc_dofs(bridge, supports, support_dof_mapping)
     
     return SimulationOptions(
         bridge, supports, temperatures, damping_ratio, total_dofs, total_elements, 
