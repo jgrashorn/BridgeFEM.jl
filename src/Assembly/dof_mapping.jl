@@ -122,15 +122,41 @@ end
 Identify DOF indices that have constraints applied.
 
 # Arguments
-- `boundary_conditions`: Boundary condition specification
+- `boundary_conditions`: Boundary condition specification (BridgeBC object)
 
 # Returns
 - Vector of constrained DOF indices
 """
 function constraint_dof_indices(boundary_conditions)::Vector{Int}
-    # Implementation would extract constraint DOF indices from boundary conditions
-    # This is a placeholder - actual implementation depends on BC data structure
-    return Vector{Int}()
+    if isa(boundary_conditions, BridgeBC)
+        # Extract constrained DOF indices from BridgeBC object
+        constrained_dofs = Vector{Int}()
+        
+        for bc_condition in boundary_conditions.conds
+            node = bc_condition[1]
+            dof_types = bc_condition[2]
+            
+            # Convert node and DOF types to global DOF indices
+            # DOF numbering: 3*(node-1)+1, 3*(node-1)+2, 3*(node-1)+3
+            base_dof = 3 * (node - 1)
+            
+            if isa(dof_types, Vector)
+                # Multiple DOF types specified as vector
+                for dof_type in dof_types
+                    push!(constrained_dofs, base_dof + dof_type)
+                end
+            else
+                # Single DOF type
+                push!(constrained_dofs, base_dof + dof_types)
+            end
+        end
+        
+        return sort(unique(constrained_dofs))
+    else
+        # For other boundary condition formats, return empty for now
+        # Can be extended as needed for different BC data structures
+        return Vector{Int}()
+    end
 end
 
 """
@@ -139,14 +165,61 @@ end
 Extract DOF indices for a specific element based on connectivity.
 
 # Arguments
-- `element_id::Int`: Element identifier
-- `connectivity`: Element connectivity data structure
+- `element_id::Int`: Element identifier (1-based indexing)
+- `connectivity`: Element connectivity data structure. Can be:
+  - `nothing`: Assumes consecutive node connectivity (element e connects nodes e and e+1)
+  - `Matrix{Int}`: Each row represents an element, columns are connected node IDs
+  - `Vector{Vector{Int}}`: Each entry contains node IDs for that element
+  - `Vector{Tuple{Int,Int}}`: Each entry is a tuple of (node1, node2) for that element
 
 # Returns  
-- Vector of DOF indices for the specified element
+- Vector of DOF indices for the specified element (6 DOFs for 2-node frame element)
 """
 function get_element_dofs(element_id::Int, connectivity)::Vector{Int}
-    # Implementation would extract element DOF indices from connectivity
-    # This is a placeholder - actual implementation depends on connectivity data structure
-    return Vector{Int}()
+    # Handle different connectivity data structures
+    if connectivity === nothing
+        # Default consecutive node connectivity for 1D structures
+        # Element e connects nodes e and e+1
+        node1 = element_id
+        node2 = element_id + 1
+        
+    elseif isa(connectivity, Matrix{Int})
+        # Matrix format: each row is an element, columns are node IDs
+        if element_id > size(connectivity, 1)
+            throw(BoundsError("Element ID $element_id exceeds connectivity matrix size"))
+        end
+        node1 = connectivity[element_id, 1]
+        node2 = connectivity[element_id, 2]
+        
+    elseif isa(connectivity, Vector{Vector{Int}})
+        # Vector of vectors format
+        if element_id > length(connectivity)
+            throw(BoundsError("Element ID $element_id exceeds connectivity vector length"))
+        end
+        element_nodes = connectivity[element_id]
+        if length(element_nodes) < 2
+            throw(ArgumentError("Element $element_id must have at least 2 nodes"))
+        end
+        node1 = element_nodes[1]
+        node2 = element_nodes[2]
+        
+    elseif isa(connectivity, Vector{Tuple{Int,Int}})
+        # Vector of tuples format
+        if element_id > length(connectivity)
+            throw(BoundsError("Element ID $element_id exceeds connectivity vector length"))
+        end
+        node1, node2 = connectivity[element_id]
+        
+    else
+        throw(ArgumentError("Unsupported connectivity data structure: $(typeof(connectivity))"))
+    end
+    
+    # Convert node IDs to DOF indices
+    # Each node has 3 DOFs: u, v, theta (numbered 3*(node-1)+1, 3*(node-1)+2, 3*(node-1)+3)
+    dofs = [
+        3*(node1-1)+1, 3*(node1-1)+2, 3*(node1-1)+3,  # Node 1 DOFs
+        3*(node2-1)+1, 3*(node2-1)+2, 3*(node2-1)+3   # Node 2 DOFs
+    ]
+    
+    return dofs
 end

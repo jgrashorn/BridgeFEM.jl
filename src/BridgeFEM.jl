@@ -76,6 +76,7 @@ export frame_elem_stiffness, frame_elem_mass, transformation_matrix
 # Assembly module exports - global matrix assembly and DOF management
 export assemble_matrices, assemble_stiffness!, assemble_matrices_with_supports
 export create_support_dof_mapping, get_dof_from_node, get_bc_dofs
+export constraint_dof_indices, get_element_dofs
 export assemble_local_support, create_support_mass_matrix, create_expanded_transformation
 export interpolate_matrix, setup_matrix_interpolation, setup_physical
 
