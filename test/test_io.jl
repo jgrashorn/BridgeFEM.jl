@@ -159,7 +159,7 @@ using BridgeFEM: simulation_options_to_dict, load_simulation_options, save_simul
         support1 = SupportElement(5, [1, 2], 0.0, 3, 0.1, 0.001, E_T_support1, 8.0, [1, 2, 3])
         
         E_T_support2 = [-50.0 250e9; 0.0 220e9; 100.0 180e9]
-        support2 = SupportElement(15, [2, 3], 45.0, 5, 0.12, 0.0015, E_T_support2, 12.0, [1, 6])
+        support2 = SupportElement(15, [2, 3], 45.0, 5, 0.12, 0.0015, E_T_support2, 12.0, [1, 3])
         
         supports = [support1, support2]
         temperatures = [10.0, 25.0, 40.0, 55.0, 70.0]

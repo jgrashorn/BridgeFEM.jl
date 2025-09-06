@@ -212,8 +212,10 @@ using Arpack
         @test all(λ_test .< sim_opts.bridge.cutoff_freq)
         
         # Test orthogonality of mode shapes (mass-normalized)
-        M_temp = assemble_matrices_with_supports(sim_opts)[1](T_test)
-        M_temp, K_temp, retained, removed = remove_fixed_dofs(M_temp, assemble_matrices_with_supports(sim_opts)[2](T_test), sim_opts.bc_dofs, sim_opts.total_dofs)
+        M_T, K_T = setup_physical(sim_opts)
+        M_temp = M_T(T_test)
+        K_temp = K_T(T_test)
+        M_temp, K_temp, retained, removed = remove_fixed_dofs(M_temp, K_temp, sim_opts.bc_dofs, sim_opts.total_dofs)
         
         # Test mass orthogonality: Φ' * M * Φ should be identity
         Φ_retained = Φ_test[retained, :]

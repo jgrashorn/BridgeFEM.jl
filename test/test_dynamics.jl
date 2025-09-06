@@ -230,7 +230,7 @@ using LinearAlgebra
         sol_modal = solve(prob_modal, saveat=0.01)
         
         # Test that solution was successful
-        @test sol_modal.retcode == :Success
+        @test SciMLBase.successful_retcode(sol_modal)
         
         # Test solution properties
         @test length(sol_modal.t) > 0
