@@ -38,24 +38,22 @@ using Test
             include("test_io.jl")
         end
     end
-    # Integration tests temporarily disabled during modularization
-    # Will be re-enabled after all modules are extracted and updated
-    # @testset "Integration Tests - Current Monolithic Structure" begin
-    #     
-    #     @testset "Fixed Cantilever Static Analysis" begin
-    #         include("integration/test_cantilever.jl")
-    #     end
-    #     
-    #     @testset "Fixed Cantilever Dynamic Analysis" begin
-    #         include("integration/test_cantilever_dynamic.jl")
-    #     end
-    #     
-    #     @testset "Simply Supported Beam Static Analysis" begin
-    #         include("integration/test_beam.jl")
-    #     end
-    #     
-    #     @testset "Simply Supported Beam Dynamic Analysis" begin
-    #         include("integration/test_beam_dynamic.jl")
-    #     end
-    # end
+    @testset "Integration Tests - Modular Structure" begin
+        
+        @testset "Fixed Cantilever Static Analysis" begin
+            include("integration/test_cantilever.jl")
+        end
+        
+        @testset "Fixed Cantilever Dynamic Analysis" begin
+            include("integration/test_cantilever_dynamic.jl")
+        end
+        
+        @testset "Simply Supported Beam Static Analysis" begin
+            include("integration/test_beam.jl")
+        end
+        
+        @testset "Simply Supported Beam Dynamic Analysis" begin
+            include("integration/test_beam_dynamic.jl")
+        end
+    end
 end
