@@ -1,59 +1,33 @@
+# Visualization/plotting.jl - Plotting and visualization functions for bridge structures
+# Moved from utils.jl for better organization
+
+using Plots
+
+# Import Core types
+using ..BridgeFEM: BridgeOptions, SupportElement, SimulationOptions
+
+# Import Assembly functions needed for visualization
+using ..BridgeFEM: setup_physical
+
+# Import ModelReduction functions needed for modal visualization
+using ..BridgeFEM: reconstruct_physical
+
 """
-    plot_bridge_with_supports(bridge, supports; mode_shape=nothing, scale_factor=1.0, T=20.0, title="Bridge Structure", show_nodes=true)
+    plot_bridge_with_supports(bo::BridgeOptions, supports::Vector{SupportElement}; kwargs...)
 
-Visualize bridge structure with support elements, optionally showing deformed mode shapes.
-
-Creates a 2D plot of the bridge and its supports with optional modal deformation visualization.
-Supports arbitrary support orientations and accounts for temperature-dependent deformations.
+Plot bridge structure with support elements and optional mode shapes or dynamic response.
 
 # Arguments
-- `bridge::BridgeOptions`: Main bridge structure definition
-- `supports::Vector{SupportElement}`: Array of support elements (piers, cables, etc.)
-
-# Keyword Arguments
-- `mode_shape::Vector{Float64}=nothing`: Modal displacement vector to visualize
-- `scale_factor::Float64=1.0`: Scaling factor for mode shape visualization
-- `T::Float64=20.0`: Temperature for support geometry calculation
-- `title::String="Bridge Structure"`: Plot title
-- `show_nodes::Bool=true`: Whether to show node markers
+- `bo::BridgeOptions`: Bridge configuration
+- `supports::Vector{SupportElement}`: Support elements to visualize
+- `mode_shape=nothing`: Optional mode shape for deformation visualization
+- `scale_factor=1.0`: Scaling factor for mode shape visualization
+- `T=20.0`: Temperature for thermal effects
+- `title="Bridge Structure"`: Plot title
+- `show_nodes=true`: Whether to show node markers
 
 # Returns
-- `Plot`: Plots.jl plot object
-
-# Visualization Features
-- Bridge deck shown as blue line with optional node markers
-- Support elements in red with angle-dependent geometry
-- Mode shape deformation overlaid on undeformed geometry
-- Equal aspect ratio for accurate geometric representation
-- Support base fixity indicators
-
-# Mode Shape Visualization
-When `mode_shape` is provided:
-- Bridge nodes are displaced by scaled modal displacements
-- Support deformation follows global DOF mapping
-- Deformation is added to undeformed geometry for clarity
-
-# Example
-```julia
-# Visualize first bending mode at 50°C
-bridge = BridgeOptions(50, bc, 300.0, 7800.0, 4.0, 3.0, E_data, 50.0)
-pier = SupportElement(26, [1,2,3], -90.0, 5, 0.5, 0.02, E_data, 50.0, [1,2,3])
-
-plot_bridge_with_supports(bridge, [pier], 
-                         mode_shape=mode_shapes[:, 1, 3], 
-                         scale_factor=50.0, 
-                         T=50.0,
-                         title="First Mode at 50°C")
-```
-
-# Notes
-- Coordinate system: x=horizontal (along bridge), y=vertical
-- Support angles: 0°=horizontal right, -90°=vertical down
-- Temperature affects support geometry for thermal analysis
-
-# See Also
-- [`animate_dynamic_response`](@ref): Time-domain animation
-- [`create_support_dof_mapping`](@ref): DOF connectivity
+- Plots.Plot object
 """
 function plot_bridge_with_supports(bo::BridgeOptions, supports::Vector{SupportElement}; 
                                  mode_shape=nothing, scale_factor=1.0, T=20.0,
@@ -75,7 +49,7 @@ function plot_bridge_with_supports(bo::BridgeOptions, supports::Vector{SupportEl
     
     # Plot bridge
     p = plot(bridge_x, bridge_y, linewidth=3, color=:blue, label="Bridge", 
-             aspect_ratio=:equal, grid=true)
+             grid=true)
     
     if show_nodes
         scatter!(bridge_x, bridge_y, color=:blue, markersize=4, label="Bridge Nodes")
@@ -204,7 +178,7 @@ function animate_mode(bo::BridgeOptions, supports::Vector{SupportElement},
         plot!(p, 
             xlims=x_limits, 
             ylims=y_limits,
-            aspect_ratio=1,        # Reduce this value to make plot wider
+            # aspect_ratio=1,        # Reduce this value to make plot wider
             size=fsize,        # Increase figure width
             legend=:topright,        
             legend_background_color=:white)
@@ -230,7 +204,7 @@ function animate_dynamic_response(bo::BridgeOptions, supports::Vector{SupportEle
     max_y_disp = maximum(abs.(u[2:3:min(bo.n_dofs, size(u,1)), :]), init=0.0)
     max_deformation = max(max_x_disp, max_y_disp) * scale_factor
     
-    padding = 20.0
+    padding = 0.0
     x_limits = (-padding - support_extent - max_deformation, 
                 bridge_extent + padding + support_extent + max_deformation)
     y_limits = (-padding - support_extent - max_deformation, 
@@ -262,14 +236,10 @@ function animate_dynamic_response(bo::BridgeOptions, supports::Vector{SupportEle
         plot!(p, 
               xlims=x_limits, 
               ylims=y_limits,
-              aspect_ratio=2.0,
+            #   aspect_ratio=2.0,
               size=(1200, 400),
               legend=:topright,
-              legend_background_color=:white,
-              left_margin=3Plots.mm,
-              right_margin=10Plots.mm,
-              top_margin=3Plots.mm,
-              bottom_margin=5Plots.mm)
+              legend_background_color=:white)
         
         frame(anim)
         
