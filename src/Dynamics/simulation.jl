@@ -79,4 +79,28 @@ function beam_physical_ode!(du, u, p, t)
     du[u_dofs] .= du_ff
 end
 
+function solve_modal_simulation(sim_opts::SimulationOptions, tspan::Tuple{Float64, Float64}, temp_func::Function, load_vector::Function; saveat=0.01)
+
+    λ_T, Φ_T, n_modes = setup_ROM(sim_opts)
+    C = α * M_T(20.0) + β * K_T(20.0)  # Rayleigh damping matrix
+    C_modal = Φ_T(20.0)' * C * Φ_T(20.0)  # Project to modal space
+    ζ = diag(C_modal)
+
+    prob_modal = ODEProblem(beam_modal_ode!, u0_modal, tspan,
+                    (; 
+                        n_modes=n_modes,
+                        n_dofs=sim_opts.total_dofs,
+                        T_func = temp_func,
+                        λ_interp = λ_T,
+                        ζ = ζ,  # Constant damping
+                        Φ_interp = Φ_T,
+                        load_vector = load_vector,
+                    ))
+
+    @info "Solving dynamic response in modal space..."
+    @time sol_modal = solve(prob_modal, saveat=saveat);
+    return sol_modal
+    
+end
+
 # End of Dynamics/simulation.jl
