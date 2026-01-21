@@ -27,7 +27,7 @@ function beam_modal_ode!(du, u, p, t)
     # Project force onto each mode
     fhat = Φ' * f
     # Modal accelerations
-    qddot = [-ζ[i]*qdot[i] - (ω[i]^2)*q[i] + fhat[i] for i in 1:p.n_modes]
+    qddot = -ζ .* qdot .- (ω .^2) .* q .+ fhat
     # Fill derivative vector
     du[1:p.n_modes] .= qdot
     du[p.n_modes+1:end] .= qddot
