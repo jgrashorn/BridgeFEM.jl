@@ -89,7 +89,7 @@ export support_element_to_dict, dict_to_support_element
 export simulation_options_to_dict, load_simulation_options, save_simulation_options
 
 # Dynamics module exports - dynamic simulation and ODE solving
-export beam_modal_ode!, beam_physical_ode!, solve_modal_simulation, solve_physical_simulation
+export beam_modal_ode!, beam_physical_ode!, solve_modal_simulation, solve_physical_simulation, solve_modal_parareal
 
 # ModelReduction module exports - modal analysis and eigenvalue computation
 export decompose_matrices, assemble_and_decompose, setup_interpolation, 

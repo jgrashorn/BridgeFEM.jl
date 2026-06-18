@@ -143,14 +143,14 @@ using LinearAlgebra
             
             # Check specific values for 90° rotation
             @test T[1,1] ≈ 0.0 atol=1e-12    # cos(90°) = 0
-            @test T[1,2] ≈ 1.0 atol=1e-12    # sin(90°) = 1
-            @test T[2,1] ≈ -1.0 atol=1e-12   # -sin(90°) = -1
+            @test T[1,2] ≈ -1.0 atol=1e-12   # -sin(90°) = -1
+            @test T[2,1] ≈ 1.0 atol=1e-12    # sin(90°) = 1
             @test T[2,2] ≈ 0.0 atol=1e-12    # cos(90°) = 0
             
             # Same for nodes 2 (DOFs 4,5)
             @test T[4,4] ≈ 0.0 atol=1e-12
-            @test T[4,5] ≈ 1.0 atol=1e-12
-            @test T[5,4] ≈ -1.0 atol=1e-12
+            @test T[4,5] ≈ -1.0 atol=1e-12
+            @test T[5,4] ≈ 1.0 atol=1e-12
             @test T[5,5] ≈ 0.0 atol=1e-12
             
             # Rotational DOFs (3,6) should remain unchanged
@@ -162,10 +162,10 @@ using LinearAlgebra
             T = transformation_matrix(45.0)
             sqrt2_half = √2 / 2
             
-            # Check trigonometric values
+            # Check trigonometric values (corrected rotation direction)
             @test T[1,1] ≈ sqrt2_half atol=1e-12   # cos(45°)
-            @test T[1,2] ≈ sqrt2_half atol=1e-12   # sin(45°)
-            @test T[2,1] ≈ -sqrt2_half atol=1e-12  # -sin(45°)
+            @test T[1,2] ≈ -sqrt2_half atol=1e-12  # -sin(45°)
+            @test T[2,1] ≈ sqrt2_half atol=1e-12   # sin(45°)
             @test T[2,2] ≈ sqrt2_half atol=1e-12   # cos(45°)
         end
         
@@ -192,10 +192,10 @@ using LinearAlgebra
             v_local = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
             v_global = T * v_local
             
-            # Should give [cos(30°), -sin(30°), 0, 0, 0, 0] in global coordinates
-            # (negative sin because transformation matrix rotates FROM local TO global)
+            # Should give [cos(30°), sin(30°), 0, 0, 0, 0] in global coordinates
+            # (unit vector along local x-axis rotated 30° counterclockwise)
             @test v_global[1] ≈ cosd(30.0) atol=1e-12
-            @test v_global[2] ≈ -sind(30.0) atol=1e-12
+            @test v_global[2] ≈ sind(30.0) atol=1e-12
             @test v_global[3] ≈ 0.0 atol=1e-12
             @test v_global[4] ≈ 0.0 atol=1e-12
             @test v_global[5] ≈ 0.0 atol=1e-12
