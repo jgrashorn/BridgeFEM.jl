@@ -48,23 +48,14 @@ function apply_bc(M::Matrix{Float64}, K::Matrix{Float64}, so)::Tuple{Matrix{Floa
     bc_dofs = so.bc_dofs
     n_dofs = size(K, 1)
     
-    for bc in bc_dofs
-        node = bc[1]
-        # dof_types = bc[2]  # DOF type(s)
-        # dof_indices = 3 * (node - 1) .+ dof_types  # Convert to global DOF indices
-
-        dof_indices = node
-        
-        for d_ in dof_indices
-            # @info "Applying boundary condition at DOF $d_"
-            if d_ <= n_dofs  # Check bounds
-                K[:, d_] .= 0.0
-                K[d_, :] .= 0.0
-                K[d_, d_] = 1.0
-                M[d_, :] .= 0.0
-                M[:, d_] .= 0.0
-                M[d_, d_] = 0.0
-            end
+    for d_ in bc_dofs
+        if d_ <= n_dofs
+            K[:, d_] .= 0.0
+            K[d_, :] .= 0.0
+            K[d_, d_] = 1.0
+            M[d_, :] .= 0.0
+            M[:, d_] .= 0.0
+            M[d_, d_] = 0.0
         end
     end
     return M, K

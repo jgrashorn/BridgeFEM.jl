@@ -90,9 +90,9 @@ function transformation_matrix(θ::Real)::Matrix{Float64}
     c = cosd(θ)
     s = sind(θ)
     T = Matrix{Float64}(LinearAlgebra.I, 6, 6)
-    T[1,1] =  c; T[1,2] =  s
-    T[2,1] = -s; T[2,2] =  c
-    T[4,4] =  c; T[4,5] =  s
-    T[5,4] = -s; T[5,5] =  c
+    T[1,1] =  c; T[1,2] = -s
+    T[2,1] =  s; T[2,2] =  c
+    T[4,4] =  c; T[4,5] = -s
+    T[5,4] =  s; T[5,5] =  c
     return T
 end
